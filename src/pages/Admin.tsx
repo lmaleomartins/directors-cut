@@ -1,0 +1,430 @@
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Film, Plus, Edit, Trash2, LogOut, Eye } from 'lucide-react';
+import { toast } from 'sonner';
+
+interface Movie {
+  id: string;
+  title: string;
+  director: string;
+  year: number;
+  duration: string;
+  genre: string;
+  thumbnail: string | null;
+  video_url: string | null;
+  views: number;
+  synopsis: string | null;
+  featured: boolean;
+  created_at: string;
+}
+
+const Admin = () => {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  const [movies, setMovies] = useState<Movie[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingMovie, setEditingMovie] = useState<Movie | null>(null);
+  
+  // Form states
+  const [title, setTitle] = useState('');
+  const [director, setDirector] = useState('');
+  const [year, setYear] = useState<number>(new Date().getFullYear());
+  const [duration, setDuration] = useState('');
+  const [genre, setGenre] = useState('');
+  const [thumbnail, setThumbnail] = useState('');
+  const [videoUrl, setVideoUrl] = useState('');
+  const [synopsis, setSynopsis] = useState('');
+  const [featured, setFeatured] = useState(false);
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/auth');
+    } else {
+      fetchMovies();
+    }
+  }, [user, navigate]);
+
+  const fetchMovies = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('movies')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setMovies(data || []);
+    } catch (error: any) {
+      toast.error('Erro ao carregar filmes: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setTitle('');
+    setDirector('');
+    setYear(new Date().getFullYear());
+    setDuration('');
+    setGenre('');
+    setThumbnail('');
+    setVideoUrl('');
+    setSynopsis('');
+    setFeatured(false);
+    setEditingMovie(null);
+  };
+
+  const openEditDialog = (movie: Movie) => {
+    setEditingMovie(movie);
+    setTitle(movie.title);
+    setDirector(movie.director);
+    setYear(movie.year);
+    setDuration(movie.duration);
+    setGenre(movie.genre);
+    setThumbnail(movie.thumbnail || '');
+    setVideoUrl(movie.video_url || '');
+    setSynopsis(movie.synopsis || '');
+    setFeatured(movie.featured);
+    setDialogOpen(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const movieData = {
+      title,
+      director,
+      year,
+      duration,
+      genre,
+      thumbnail: thumbnail || null,
+      video_url: videoUrl || null,
+      synopsis: synopsis || null,
+      featured
+    };
+
+    try {
+      if (editingMovie) {
+        const { error } = await supabase
+          .from('movies')
+          .update(movieData)
+          .eq('id', editingMovie.id);
+
+        if (error) throw error;
+        toast.success('Filme atualizado com sucesso!');
+      } else {
+        const { error } = await supabase
+          .from('movies')
+          .insert([movieData]);
+
+        if (error) throw error;
+        toast.success('Filme adicionado com sucesso!');
+      }
+
+      setDialogOpen(false);
+      resetForm();
+      fetchMovies();
+    } catch (error: any) {
+      toast.error('Erro ao salvar filme: ' + error.message);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir este filme?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('movies')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      toast.success('Filme excluído com sucesso!');
+      fetchMovies();
+    } catch (error: any) {
+      toast.error('Erro ao excluir filme: ' + error.message);
+    }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Film className="w-16 h-16 text-primary mx-auto mb-4 animate-pulse" />
+          <p className="text-muted-foreground">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="border-b border-border bg-card">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <Film className="w-8 h-8 text-primary" />
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">Admin Panel</h1>
+              <p className="text-sm text-muted-foreground">Gerenciar catálogo de filmes</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="outline"
+              onClick={() => navigate('/')}
+              className="border-border"
+            >
+              <Eye className="w-4 h-4 mr-2" />
+              Ver Site
+            </Button>
+            
+            <Button
+              variant="outline"
+              onClick={handleSignOut}
+              className="border-border text-destructive hover:text-destructive"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Sair
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="text-3xl font-bold text-foreground">Filmes</h2>
+            <p className="text-muted-foreground mt-1">
+              {movies.length} filme{movies.length !== 1 ? 's' : ''} no catálogo
+            </p>
+          </div>
+          
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button 
+                className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                onClick={resetForm}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Adicionar Filme
+              </Button>
+            </DialogTrigger>
+            
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-card">
+              <DialogHeader>
+                <DialogTitle className="text-foreground">
+                  {editingMovie ? 'Editar Filme' : 'Adicionar Filme'}
+                </DialogTitle>
+                <DialogDescription className="text-muted-foreground">
+                  Preencha as informações do filme abaixo.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="title">Título *</Label>
+                    <Input
+                      id="title"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      className="bg-input border-border"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="director">Diretor *</Label>
+                    <Input
+                      id="director"
+                      value={director}
+                      onChange={(e) => setDirector(e.target.value)}
+                      className="bg-input border-border"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="year">Ano *</Label>
+                    <Input
+                      id="year"
+                      type="number"
+                      value={year}
+                      onChange={(e) => setYear(parseInt(e.target.value))}
+                      className="bg-input border-border"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="duration">Duração *</Label>
+                    <Input
+                      id="duration"
+                      placeholder="120 min"
+                      value={duration}
+                      onChange={(e) => setDuration(e.target.value)}
+                      className="bg-input border-border"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="genre">Gênero *</Label>
+                    <Input
+                      id="genre"
+                      placeholder="Drama, Terror, etc."
+                      value={genre}
+                      onChange={(e) => setGenre(e.target.value)}
+                      className="bg-input border-border"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="thumbnail">URL da Imagem</Label>
+                  <Input
+                    id="thumbnail"
+                    placeholder="https://example.com/image.jpg"
+                    value={thumbnail}
+                    onChange={(e) => setThumbnail(e.target.value)}
+                    className="bg-input border-border"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="videoUrl">URL do Vídeo</Label>
+                  <Input
+                    id="videoUrl"
+                    placeholder="https://example.com/video.mp4"
+                    value={videoUrl}
+                    onChange={(e) => setVideoUrl(e.target.value)}
+                    className="bg-input border-border"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="synopsis">Sinopse</Label>
+                  <Textarea
+                    id="synopsis"
+                    placeholder="Descrição do filme..."
+                    value={synopsis}
+                    onChange={(e) => setSynopsis(e.target.value)}
+                    className="bg-input border-border min-h-20"
+                  />
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="featured"
+                    checked={featured}
+                    onCheckedChange={setFeatured}
+                  />
+                  <Label htmlFor="featured" className="text-sm">
+                    Filme em destaque
+                  </Label>
+                </div>
+
+                <div className="flex justify-end space-x-2 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setDialogOpen(false)}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button type="submit" className="bg-primary hover:bg-primary/90">
+                    {editingMovie ? 'Salvar Alterações' : 'Adicionar Filme'}
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {movies.map((movie) => (
+            <Card key={movie.id} className="bg-gradient-card border-border hover:shadow-glow transition-all duration-300">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <CardTitle className="text-lg line-clamp-2 text-foreground">
+                      {movie.title}
+                    </CardTitle>
+                    <CardDescription className="text-muted-foreground">
+                      {movie.director} • {movie.year}
+                    </CardDescription>
+                  </div>
+                  {movie.featured && (
+                    <span className="bg-primary text-primary-foreground text-xs px-2 py-1 rounded">
+                      Destaque
+                    </span>
+                  )}
+                </div>
+              </CardHeader>
+              
+              <CardContent className="pt-0">
+                <div className="space-y-2 text-sm text-muted-foreground mb-4">
+                  <p>Duração: {movie.duration}</p>
+                  <p>Gênero: {movie.genre}</p>
+                  <p>Visualizações: {movie.views}</p>
+                </div>
+                
+                <div className="flex justify-end space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openEditDialog(movie)}
+                    className="border-border"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDelete(movie.id)}
+                    className="border-border text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {movies.length === 0 && (
+          <div className="text-center py-12">
+            <Film className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-foreground mb-2">
+              Nenhum filme encontrado
+            </h3>
+            <p className="text-muted-foreground mb-4">
+              Comece adicionando seu primeiro filme ao catálogo.
+            </p>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+};
+
+export default Admin;

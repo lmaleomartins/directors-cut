@@ -1,6 +1,7 @@
+import { useNavigate } from 'react-router-dom';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Play, Eye, Clock } from "lucide-react";
+import { Play, Eye, Clock, Film } from "lucide-react";
 
 interface VideoCardProps {
   id: string;
@@ -9,12 +10,13 @@ interface VideoCardProps {
   year: number;
   duration: string;
   genre: string;
-  thumbnail: string;
+  thumbnail: string | null;
   views: number;
   featured?: boolean;
 }
 
 const VideoCard = ({ 
+  id,
   title, 
   director, 
   year, 
@@ -24,16 +26,30 @@ const VideoCard = ({
   views, 
   featured = false 
 }: VideoCardProps) => {
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    navigate(`/movie/${id}`);
+  };
   return (
-    <Card className={`group overflow-hidden bg-gradient-card border-border hover:shadow-glow transition-all duration-300 cursor-pointer ${
-      featured ? 'ring-2 ring-primary' : ''
-    }`}>
+    <Card 
+      className={`group overflow-hidden bg-gradient-card border-border hover:shadow-glow transition-all duration-300 cursor-pointer ${
+        featured ? 'ring-2 ring-primary' : ''
+      }`}
+      onClick={handleClick}
+    >
       <div className="relative aspect-video overflow-hidden">
-        <img 
-          src={thumbnail} 
-          alt={title}
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-        />
+        {thumbnail ? (
+          <img 
+            src={thumbnail} 
+            alt={title}
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        ) : (
+          <div className="w-full h-full bg-muted flex items-center justify-center">
+            <Film className="w-16 h-16 text-muted-foreground" />
+          </div>
+        )}
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
           <Play className="w-12 h-12 text-white drop-shadow-lg" />
         </div>
