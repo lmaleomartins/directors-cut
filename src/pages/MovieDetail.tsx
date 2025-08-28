@@ -67,11 +67,10 @@ const MovieDetail = () => {
     if (!id) return;
     
     try {
-      // Increment views count using SQL function
-      const { error } = await supabase
-        .from('movies')
-        .update({ views: supabase.sql`views + 1` })
-        .eq('id', id);
+      // Increment views count using RPC function
+      const { error } = await supabase.rpc('increment_movie_views', {
+        movie_id: id
+      });
       
       if (error) throw error;
     } catch (error) {
