@@ -81,21 +81,55 @@ const MovieDetail = () => {
   };
 
   const getVideoEmbedUrl = (url: string) => {
-    // Check if it's a YouTube URL
+    // YouTube
     const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
-    const match = url.match(youtubeRegex);
+    const youtubeMatch = url.match(youtubeRegex);
+    if (youtubeMatch) {
+      return `https://www.youtube.com/embed/${youtubeMatch[1]}`;
+    }
     
-    if (match) {
-      return `https://www.youtube.com/embed/${match[1]}`;
+    // Vimeo
+    const vimeoRegex = /(?:vimeo\.com\/)(?:.*\/)?(\d+)/;
+    const vimeoMatch = url.match(vimeoRegex);
+    if (vimeoMatch) {
+      return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+    }
+    
+    // Dailymotion
+    const dailymotionRegex = /(?:dailymotion\.com\/video\/|dai\.ly\/)([a-zA-Z0-9]+)/;
+    const dailymotionMatch = url.match(dailymotionRegex);
+    if (dailymotionMatch) {
+      return `https://www.dailymotion.com/embed/video/${dailymotionMatch[1]}`;
+    }
+    
+    // Twitch
+    const twitchRegex = /(?:twitch\.tv\/videos\/)(\d+)/;
+    const twitchMatch = url.match(twitchRegex);
+    if (twitchMatch) {
+      return `https://player.twitch.tv/?video=${twitchMatch[1]}&parent=${window.location.hostname}`;
+    }
+    
+    // Facebook Video
+    const facebookRegex = /(?:facebook\.com\/.*\/videos\/|fb\.watch\/)(\d+)/;
+    const facebookMatch = url.match(facebookRegex);
+    if (facebookMatch) {
+      return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(url)}`;
     }
     
     // Return original URL for direct video files
     return url;
   };
 
-  const isYouTubeUrl = (url: string) => {
-    const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)/;
-    return youtubeRegex.test(url);
+  const isEmbeddableVideo = (url: string) => {
+    const patterns = [
+      /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)/,
+      /(?:vimeo\.com\/)/,
+      /(?:dailymotion\.com\/video\/|dai\.ly\/)/,
+      /(?:twitch\.tv\/videos\/)/,
+      /(?:facebook\.com\/.*\/videos\/|fb\.watch\/)/
+    ];
+    
+    return patterns.some(pattern => pattern.test(url));
   };
 
   if (loading) {
@@ -177,7 +211,7 @@ const MovieDetail = () => {
             {showPlayer && movie.video_url && (
               <div className="mb-8">
                 <div className="bg-black rounded-lg overflow-hidden shadow-cinema">
-                  {isYouTubeUrl(movie.video_url) ? (
+                  {isEmbeddableVideo(movie.video_url) ? (
                     <iframe
                       src={getVideoEmbedUrl(movie.video_url)}
                       className="w-full aspect-video"
