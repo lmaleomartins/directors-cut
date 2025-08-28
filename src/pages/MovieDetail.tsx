@@ -80,6 +80,24 @@ const MovieDetail = () => {
     }
   };
 
+  const getVideoEmbedUrl = (url: string) => {
+    // Check if it's a YouTube URL
+    const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+    const match = url.match(youtubeRegex);
+    
+    if (match) {
+      return `https://www.youtube.com/embed/${match[1]}`;
+    }
+    
+    // Return original URL for direct video files
+    return url;
+  };
+
+  const isYouTubeUrl = (url: string) => {
+    const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)/;
+    return youtubeRegex.test(url);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -159,16 +177,27 @@ const MovieDetail = () => {
             {showPlayer && movie.video_url && (
               <div className="mb-8">
                 <div className="bg-black rounded-lg overflow-hidden shadow-cinema">
-                  <video 
-                    controls 
-                    className="w-full aspect-video"
-                    poster={movie.thumbnail || undefined}
-                  >
-                    <source src={movie.video_url} type="video/mp4" />
-                    <source src={movie.video_url} type="video/webm" />
-                    <source src={movie.video_url} type="video/ogg" />
-                    Seu navegador não suporta o elemento de vídeo.
-                  </video>
+                  {isYouTubeUrl(movie.video_url) ? (
+                    <iframe
+                      src={getVideoEmbedUrl(movie.video_url)}
+                      className="w-full aspect-video"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                      title={movie.title}
+                    />
+                  ) : (
+                    <video 
+                      controls 
+                      className="w-full aspect-video"
+                      poster={movie.thumbnail || undefined}
+                    >
+                      <source src={movie.video_url} type="video/mp4" />
+                      <source src={movie.video_url} type="video/webm" />
+                      <source src={movie.video_url} type="video/ogg" />
+                      Seu navegador não suporta o elemento de vídeo.
+                    </video>
+                  )}
                 </div>
               </div>
             )}
