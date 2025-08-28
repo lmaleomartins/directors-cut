@@ -38,7 +38,7 @@ const VideoCard = ({
       }`}
       onClick={handleClick}
     >
-      <div className="relative aspect-video overflow-hidden">
+      <div className="relative aspect-[2/3] overflow-hidden">
         {thumbnail ? (
           <img 
             src={thumbnail} 
