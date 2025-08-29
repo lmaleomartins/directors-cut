@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,31 +14,49 @@ const ResetPassword = () => {
   const [loading, setLoading] = useState(false);
   const [isValidToken, setIsValidToken] = useState(false);
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
 
   useEffect(() => {
-    // Check if we have the necessary tokens from the URL
-    const accessToken = searchParams.get('access_token');
-    const refreshToken = searchParams.get('refresh_token');
-    
-    if (accessToken && refreshToken) {
-      // Set the session with the tokens from the URL
-      supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken
-      }).then(({ error }) => {
-        if (error) {
-          toast.error('Link de recuperação inválido ou expirado');
-          navigate('/auth');
+    // Check if user has a valid session (Supabase automatically handles the recovery tokens)
+    const checkSession = async () => {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (session && session.user) {
+        setIsValidToken(true);
+      } else {
+        // Check if there are recovery tokens in the URL hash
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token');
+        const type = hashParams.get('type');
+        
+        if (accessToken && refreshToken && type === 'recovery') {
+          try {
+            const { error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken
+            });
+            
+            if (error) {
+              toast.error('Link de recuperação inválido ou expirado');
+              navigate('/auth');
+            } else {
+              setIsValidToken(true);
+              // Clear the hash to clean up the URL
+              window.history.replaceState({}, document.title, window.location.pathname);
+            }
+          } catch (err) {
+            toast.error('Erro ao processar link de recuperação');
+            navigate('/auth');
+          }
         } else {
-          setIsValidToken(true);
+          toast.error('Link de recuperação inválido');
+          navigate('/auth');
         }
-      });
-    } else {
-      toast.error('Link de recuperação inválido');
-      navigate('/auth');
-    }
-  }, [searchParams, navigate]);
+      }
+    };
+    
+    checkSession();
+  }, [navigate]);
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
