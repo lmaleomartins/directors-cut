@@ -9,7 +9,7 @@ const Footer = () => {
             <div className="flex items-center space-x-2 mb-4">
               <Film className="w-6 h-6 text-primary" />
               <h3 className="text-xl font-bold bg-gradient-accent bg-clip-text text-transparent">
-                CineCult
+                Director's Cut
               </h3>
             </div>
             <p className="text-muted-foreground leading-relaxed">

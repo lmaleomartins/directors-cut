@@ -15,7 +15,7 @@ const HeroSection = () => {
         <Film className="w-16 h-16 mx-auto mb-6 text-primary" />
         <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
           <span className="bg-gradient-accent bg-clip-text text-transparent">
-            CineCult
+            Director's Cut
           </span>
         </h1>
         <p className="text-xl md:text-2xl mb-8 text-gray-200 leading-relaxed">
