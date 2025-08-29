@@ -27,7 +27,7 @@ const Header = () => {
             className="text-2xl font-bold bg-gradient-accent bg-clip-text text-transparent cursor-pointer"
             onClick={() => navigate('/')}
           >
-            Director's Cut
+            CineCult
           </h1>
         </div>
         <div className="flex items-center space-x-4">
