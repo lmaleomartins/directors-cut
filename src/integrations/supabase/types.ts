@@ -17,6 +17,7 @@ export type Database = {
       movies: {
         Row: {
           created_at: string
+          created_by: string | null
           director: string
           duration: string
           featured: boolean | null
@@ -32,6 +33,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
           director: string
           duration: string
           featured?: boolean | null
@@ -47,6 +49,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          created_by?: string | null
           director?: string
           duration?: string
           featured?: boolean | null
@@ -62,18 +65,57 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          role: Database["public"]["Enums"]["user_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["user_role"]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["user_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       increment_movie_views: {
         Args: { movie_id: string }
         Returns: undefined
       }
+      is_admin_or_master: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      user_role: "master" | "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -200,6 +242,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_role: ["master", "admin", "user"],
+    },
   },
 } as const
