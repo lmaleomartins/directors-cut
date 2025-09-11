@@ -113,6 +113,10 @@ export type Database = {
         Args: { _user_id: string }
         Returns: boolean
       }
+      set_master_user: {
+        Args: { _email: string }
+        Returns: string
+      }
     }
     Enums: {
       user_role: "master" | "admin" | "user"
