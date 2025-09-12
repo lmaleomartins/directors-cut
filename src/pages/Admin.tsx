@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
@@ -31,6 +32,27 @@ interface Movie {
   created_at: string;
   created_by: string | null;
 }
+
+// Opções pré-definidas para os dropdowns
+const YEAR_OPTIONS = Array.from({ length: 2024 - 1895 + 1 }, (_, i) => 2024 - i);
+
+const DURATION_OPTIONS = [
+  { value: "Menos de 30 min", label: "Menos de 30 min (Curta-metragem)" },
+  { value: "30-60 min", label: "30-60 min" },
+  { value: "60-90 min", label: "60-90 min" },
+  { value: "90-120 min", label: "90-120 min" },
+  { value: "120-150 min", label: "120-150 min" },
+  { value: "150-180 min", label: "150-180 min" },
+  { value: "Mais de 180 min", label: "Mais de 180 min (Épico)" },
+];
+
+const GENRE_OPTIONS = [
+  "Ação", "Aventura", "Animação", "Biografia", "Comédia", "Crime", 
+  "Documentário", "Drama", "Família", "Fantasia", "Film-Noir", 
+  "História", "Horror", "Musical", "Mistério", "Romance", 
+  "Ficção Científica", "Esporte", "Thriller", "Guerra", "Western",
+  "Arthouse", "Cult", "Experimental", "Independente"
+];
 
 const Admin = () => {
   const { user, signOut } = useAuth();
@@ -322,38 +344,50 @@ const Admin = () => {
                     <div className="grid grid-cols-3 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="year">Ano *</Label>
-                        <Input
-                          id="year"
-                          type="number"
-                          value={year}
-                          onChange={(e) => setYear(parseInt(e.target.value))}
-                          className="bg-input border-border"
-                          required
-                        />
+                        <Select value={year.toString()} onValueChange={(value) => setYear(parseInt(value))}>
+                          <SelectTrigger className="bg-input border-border">
+                            <SelectValue placeholder="Selecione o ano" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-popover border-border max-h-60">
+                            {YEAR_OPTIONS.map((yearOption) => (
+                              <SelectItem key={yearOption} value={yearOption.toString()}>
+                                {yearOption}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                       
                       <div className="space-y-2">
                         <Label htmlFor="duration">Duração *</Label>
-                        <Input
-                          id="duration"
-                          placeholder="120 min"
-                          value={duration}
-                          onChange={(e) => setDuration(e.target.value)}
-                          className="bg-input border-border"
-                          required
-                        />
+                        <Select value={duration} onValueChange={setDuration}>
+                          <SelectTrigger className="bg-input border-border">
+                            <SelectValue placeholder="Selecione a duração" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-popover border-border">
+                            {DURATION_OPTIONS.map((durationOption) => (
+                              <SelectItem key={durationOption.value} value={durationOption.value}>
+                                {durationOption.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                       
                       <div className="space-y-2">
                         <Label htmlFor="genre">Gênero *</Label>
-                        <Input
-                          id="genre"
-                          placeholder="Drama, Terror, etc."
-                          value={genre}
-                          onChange={(e) => setGenre(e.target.value)}
-                          className="bg-input border-border"
-                          required
-                        />
+                        <Select value={genre} onValueChange={setGenre}>
+                          <SelectTrigger className="bg-input border-border">
+                            <SelectValue placeholder="Selecione o gênero" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-popover border-border max-h-60">
+                            {GENRE_OPTIONS.map((genreOption) => (
+                              <SelectItem key={genreOption} value={genreOption}>
+                                {genreOption}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
 
