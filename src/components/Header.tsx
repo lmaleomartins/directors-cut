@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Film, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,6 +43,8 @@ const Header = () => {
               Contato
             </a>
           </nav>
+
+          <ThemeToggle />
 
           {/* Auth Menu */}
           {user ? (
