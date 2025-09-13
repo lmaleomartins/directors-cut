@@ -23,7 +23,7 @@ interface Movie {
   director: string;
   year: number;
   duration: string;
-  genre: string;
+  genre: string | string[];
   thumbnail: string | null;
   video_url: string | null;
   views: number;
@@ -51,7 +51,13 @@ const GENRE_OPTIONS = [
   "Documentário", "Drama", "Família", "Fantasia", "Film-Noir", 
   "História", "Horror", "Musical", "Mistério", "Romance", 
   "Ficção Científica", "Esporte", "Thriller", "Guerra", "Western",
-  "Arthouse", "Cult", "Experimental", "Independente"
+  "Arthouse", "Cult", "Experimental", "Independente", "Palestra",
+  "Stand-up", "Talk Show", "Reality Show", "Game Show", "Notícias",
+  "Educativo", "Infantil", "Teen", "Adulto", "LGBTQ+", "Noir",
+  "Supernatural", "Cyberpunk", "Steampunk", "Distopia", "Utopia",
+  "Mockumentário", "Found Footage", "Antologia", "Minissérie",
+  "Web Series", "Podcast", "Vlog", "Tutorial", "Gameplay",
+  "Resenha", "Análise", "Debate", "Entrevista", "Mesa Redonda"
 ];
 
 const Admin = () => {
@@ -68,7 +74,7 @@ const Admin = () => {
   const [director, setDirector] = useState('');
   const [year, setYear] = useState<number>(new Date().getFullYear());
   const [duration, setDuration] = useState('');
-  const [genre, setGenre] = useState('');
+  const [genre, setGenre] = useState<string[]>([]);
   const [thumbnail, setThumbnail] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
   const [synopsis, setSynopsis] = useState('');
@@ -109,7 +115,7 @@ const Admin = () => {
     setDirector('');
     setYear(new Date().getFullYear());
     setDuration('');
-    setGenre('');
+    setGenre([]);
     setThumbnail('');
     setVideoUrl('');
     setSynopsis('');
@@ -123,7 +129,7 @@ const Admin = () => {
     setDirector(movie.director);
     setYear(movie.year);
     setDuration(movie.duration);
-    setGenre(movie.genre);
+    setGenre(Array.isArray(movie.genre) ? movie.genre : [movie.genre]);
     setThumbnail(movie.thumbnail || '');
     setVideoUrl(movie.video_url || '');
     setSynopsis(movie.synopsis || '');
@@ -140,7 +146,7 @@ const Admin = () => {
       director,
       year,
       duration,
-      genre,
+      genre: genre.join(', '),
       thumbnail: thumbnail || null,
       video_url: videoUrl || null,
       synopsis: synopsis || null,
@@ -375,19 +381,39 @@ const Admin = () => {
                       </div>
                       
                       <div className="space-y-2">
-                        <Label htmlFor="genre">Gênero *</Label>
-                        <Select value={genre} onValueChange={setGenre}>
-                          <SelectTrigger className="bg-input border-border">
-                            <SelectValue placeholder="Selecione o gênero" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-popover border-border max-h-60">
-                            {GENRE_OPTIONS.map((genreOption) => (
-                              <SelectItem key={genreOption} value={genreOption}>
-                                {genreOption}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <Label htmlFor="genre">Gênero(s) *</Label>
+                        <div className="space-y-2">
+                          <Select onValueChange={(value) => {
+                            if (!genre.includes(value)) {
+                              setGenre([...genre, value]);
+                            }
+                          }}>
+                            <SelectTrigger className="bg-input border-border">
+                              <SelectValue placeholder="Adicione gêneros" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-popover border-border max-h-60">
+                              {GENRE_OPTIONS.filter(option => !genre.includes(option)).map((genreOption) => (
+                                <SelectItem key={genreOption} value={genreOption}>
+                                  {genreOption}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {genre.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                              {genre.map((selectedGenre) => (
+                                <Badge
+                                  key={selectedGenre}
+                                  variant="secondary"
+                                  className="cursor-pointer hover:bg-destructive hover:text-destructive-foreground"
+                                  onClick={() => setGenre(genre.filter(g => g !== selectedGenre))}
+                                >
+                                  {selectedGenre} ×
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -476,7 +502,7 @@ const Admin = () => {
                   <CardContent className="pt-0">
                     <div className="space-y-2 text-sm text-muted-foreground mb-4">
                       <p>Duração: {movie.duration}</p>
-                      <p>Gênero: {movie.genre}</p>
+                      <p>Gênero: {Array.isArray(movie.genre) ? movie.genre.join(', ') : movie.genre}</p>
                       <p>Visualizações: {movie.views}</p>
                     </div>
                     
