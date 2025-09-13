@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { Film, User, LogOut } from "lucide-react";
+import { Film, User, LogOut, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
@@ -10,6 +10,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Separator } from "@/components/ui/separator";
 
 const Header = () => {
   const { user, signOut } = useAuth();
@@ -32,6 +40,7 @@ const Header = () => {
           </h1>
         </div>
         <div className="flex items-center space-x-4">
+          {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
             <a href="#catalog" className="text-foreground hover:text-primary transition-colors">
               Catálogo
@@ -46,11 +55,11 @@ const Header = () => {
 
           <ThemeToggle />
 
-          {/* Auth Menu */}
+          {/* Desktop Auth Menu */}
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="border-border">
+                <Button variant="outline" size="icon" className="border-border hidden md:inline-flex">
                   <User className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -82,6 +91,81 @@ const Header = () => {
               Admin
             </Button>
           )}
+
+          {/* Mobile Menu */}
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="icon" className="md:hidden border-border">
+                <Menu className="h-4 w-4" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent className="w-80 bg-card border-border">
+              <SheetHeader>
+                <SheetTitle className="text-foreground">Menu</SheetTitle>
+              </SheetHeader>
+              
+              <div className="mt-6 space-y-4">
+                {/* Navigation Links */}
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium text-muted-foreground mb-3">Navegação</h3>
+                  <a 
+                    href="#catalog" 
+                    className="block px-3 py-2 text-foreground hover:text-primary hover:bg-accent rounded-md transition-colors"
+                  >
+                    Catálogo
+                  </a>
+                  <a 
+                    href="#about" 
+                    className="block px-3 py-2 text-foreground hover:text-primary hover:bg-accent rounded-md transition-colors"
+                  >
+                    Sobre
+                  </a>
+                  <a 
+                    href="#contact" 
+                    className="block px-3 py-2 text-foreground hover:text-primary hover:bg-accent rounded-md transition-colors"
+                  >
+                    Contato
+                  </a>
+                </div>
+
+                <Separator className="bg-border" />
+
+                {/* Auth Section */}
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium text-muted-foreground mb-3">Conta</h3>
+                  {user ? (
+                    <>
+                      <Button
+                        variant="ghost"
+                        onClick={() => navigate('/admin')}
+                        className="w-full justify-start px-3 py-2 h-auto text-foreground hover:text-primary hover:bg-accent"
+                      >
+                        <User className="mr-2 h-4 w-4" />
+                        Painel Admin
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        onClick={handleSignOut}
+                        className="w-full justify-start px-3 py-2 h-auto text-destructive hover:text-destructive hover:bg-accent"
+                      >
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Sair
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      onClick={() => navigate('/auth')}
+                      className="w-full justify-start px-3 py-2 h-auto text-foreground hover:text-primary hover:bg-accent"
+                    >
+                      <User className="mr-2 h-4 w-4" />
+                      Admin
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </header>
