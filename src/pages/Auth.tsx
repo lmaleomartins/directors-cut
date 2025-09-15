@@ -75,10 +75,20 @@ const Auth = () => {
       
       <Card className="w-full max-w-md bg-gradient-card border-border shadow-cinema relative z-10">
         <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
+          <div className="flex items-center justify-between mb-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/')}
+              className="text-muted-foreground hover:text-foreground p-2"
+            >
+              <ArrowLeft className="w-4 h-4 mr-1" />
+              Voltar
+            </Button>
             <div className="p-3 bg-gradient-accent rounded-full">
               <Film className="w-8 h-8 text-primary-foreground" />
             </div>
+            <div className="w-16" /> {/* Spacer for centering */}
           </div>
           <CardTitle className="text-2xl font-bold bg-gradient-accent bg-clip-text text-transparent">
             Director's Cut
