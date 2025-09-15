@@ -48,6 +48,9 @@ All colors MUST be HSL.
     --gradient-card: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(0 20% 96%) 100%);
     --gradient-accent: linear-gradient(90deg, hsl(0 72% 51%) 0%, hsl(0 72% 60%) 100%);
     
+    /* Page gradient - Light */
+    --background-subtle: 0 10% 95%;
+    
     /* Shadows - Light */
     --shadow-cinema: 0 8px 32px hsl(0 15% 15% / 0.1);
     --shadow-card: 0 4px 16px hsl(0 15% 15% / 0.05);
@@ -107,6 +110,9 @@ All colors MUST be HSL.
     --gradient-card: linear-gradient(145deg, hsl(0 9% 12%) 0%, hsl(0 9% 8%) 100%);
     --gradient-accent: linear-gradient(90deg, hsl(0 72% 51%) 0%, hsl(0 72% 35%) 100%);
     
+    /* Page gradient - Dark */
+    --background-subtle: 0 9% 12%;
+    
     /* Shadows - Dark */
     --shadow-cinema: 0 8px 32px hsl(0 0% 0% / 0.6);
     --shadow-card: 0 4px 16px hsl(0 0% 0% / 0.4);
@@ -131,5 +137,7 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    background: linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--background-subtle, var(--background))) 100%);
+    min-height: 100vh;
   }
 }
