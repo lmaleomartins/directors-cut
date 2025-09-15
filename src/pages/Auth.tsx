@@ -94,7 +94,7 @@ const Auth = () => {
             Director's Cut
           </CardTitle>
           <CardDescription className="text-muted-foreground">
-            Acesso restrito para administradores
+            Faça login para acessar o painel de controle
           </CardDescription>
         </CardHeader>
         
