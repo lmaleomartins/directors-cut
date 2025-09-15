@@ -381,8 +381,18 @@ const Admin = () => {
                       
                       <div className="space-y-2">
                         <Label htmlFor="genre">Gênero(s) *</Label>
-                        <div className="space-y-2">
+                          <div className="space-y-2">
                           <Select onValueChange={(value) => {
+                            // Validação: não permitir "Adulto" e "Infantil" ao mesmo tempo
+                            if (value === "Adulto" && genre.includes("Infantil")) {
+                              setGenre(genre.filter(g => g !== "Infantil").concat(value));
+                              return;
+                            }
+                            if (value === "Infantil" && genre.includes("Adulto")) {
+                              setGenre(genre.filter(g => g !== "Adulto").concat(value));
+                              return;
+                            }
+                            
                             if (!genre.includes(value)) {
                               setGenre([...genre, value]);
                             }
