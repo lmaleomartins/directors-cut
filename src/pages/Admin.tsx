@@ -47,17 +47,16 @@ const DURATION_OPTIONS = [
 ];
 
 const GENRE_OPTIONS = [
-  "Ação", "Aventura", "Animação", "Biografia", "Comédia", "Crime", 
-  "Documentário", "Drama", "Família", "Fantasia", "Film-Noir", 
-  "História", "Horror", "Musical", "Mistério", "Romance", 
-  "Ficção Científica", "Esporte", "Thriller", "Guerra", "Western",
-  "Arthouse", "Cult", "Experimental", "Independente", "Palestra",
-  "Stand-up", "Talk Show", "Reality Show", "Game Show", "Notícias",
-  "Educativo", "Infantil", "Teen", "Adulto", "LGBTQ+", "Noir",
-  "Supernatural", "Cyberpunk", "Steampunk", "Distopia", "Utopia",
-  "Mockumentário", "Found Footage", "Antologia", "Minissérie",
-  "Web Series", "Podcast", "Vlog", "Tutorial", "Gameplay",
-  "Resenha", "Análise", "Debate", "Entrevista", "Mesa Redonda"
+  "Ação", "Adulto", "Análise", "Animação", "Antologia", "Arthouse", 
+  "Aventura", "Biografia", "Comédia", "Crime", "Cult", "Cyberpunk", 
+  "Debate", "Distopia", "Documentário", "Drama", "Educativo", "Entrevista", 
+  "Esporte", "Experimental", "Família", "Fantasia", "Ficção Científica", 
+  "Film-Noir", "Found Footage", "Game Show", "Gameplay", "Guerra", 
+  "História", "Horror", "Independente", "Infantil", "LGBTQ+", "Mesa Redonda", 
+  "Minissérie", "Mistério", "Mockumentário", "Musical", "Noir", "Notícias", 
+  "Palestra", "Podcast", "Reality Show", "Resenha", "Romance", "Stand-up", 
+  "Steampunk", "Supernatural", "Talk Show", "Teen", "Thriller", "Tutorial", 
+  "Utopia", "Vlog", "Web Series", "Western"
 ];
 
 const Admin = () => {
