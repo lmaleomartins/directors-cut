@@ -44,7 +44,7 @@ const Footer = () => {
         
         <div className="border-t border-border mt-8 pt-8 text-center">
           <p className="text-muted-foreground flex items-center justify-center">
-            Feito com <Heart className="w-4 h-4 text-primary mx-1" /> para os amantes do cinema cult
+            Feito com <Heart className="w-4 h-4 text-primary mx-1" /> para os amantes do cinema
           </p>
         </div>
       </div>
