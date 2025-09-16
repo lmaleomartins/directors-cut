@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import VideoCard from "./VideoCard";
 import { Film } from "lucide-react";
+import { Search } from "lucide-react";
 import { toast } from 'sonner';
 
 interface Movie {
@@ -14,6 +15,7 @@ interface Movie {
   thumbnail: string | null;
   views: number;
   featured: boolean;
+  synopsis?: string;
 }
 
 const VideoGrid = () => {
@@ -34,13 +36,18 @@ const VideoGrid = () => {
 
   // Filtragem e busca
   const filteredMovies = movies
-    .filter(movie =>
-      (movie.title.toLowerCase().includes(search.toLowerCase()) ||
-      movie.director.toLowerCase().includes(search.toLowerCase())) &&
-      (!filterGenre || (Array.isArray(movie.genre) ? movie.genre.includes(filterGenre) : movie.genre === filterGenre)) &&
-      (!filterYear || movie.year.toString() === filterYear) &&
-      (!filterDuration || movie.duration === filterDuration)
-    );
+    .filter(movie => {
+      const searchLower = search.toLowerCase();
+      const titleMatch = movie.title.toLowerCase().includes(searchLower);
+      const directorMatch = movie.director.toLowerCase().includes(searchLower);
+      const synopsisMatch = movie.synopsis ? movie.synopsis.toLowerCase().includes(searchLower) : false;
+      return (
+        (titleMatch || directorMatch || synopsisMatch) &&
+        (!filterGenre || (Array.isArray(movie.genre) ? movie.genre.includes(filterGenre) : movie.genre === filterGenre)) &&
+        (!filterYear || movie.year.toString() === filterYear) &&
+        (!filterDuration || movie.duration === filterDuration)
+      );
+    });
   const paginatedMovies = filteredMovies.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const totalPages = Math.ceil(filteredMovies.length / PAGE_SIZE);
 
@@ -113,12 +120,15 @@ const VideoGrid = () => {
         <h2 className="text-3xl font-bold mb-8 text-center text-foreground">Catálogo</h2>
         <div className="flex flex-wrap gap-4 justify-center mb-8 items-center">
           <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
+              <Search className="w-5 h-5" />
+            </span>
             <input
               type="text"
-              placeholder="Pesquisar por título ou diretor..."
+              placeholder="Buscar por título, diretor ou sinopse"
               value={search}
               onChange={e => { setSearch(e.target.value); setPage(1); }}
-              className="px-3 py-2 rounded-lg border border-border bg-background text-foreground w-64 pr-8 shadow transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/60 hover:shadow-[0_0_12px_2px_rgba(220,38,38,0.4)]"
+  className="pl-10 px-3 py-2 rounded-lg border border-border bg-background text-foreground w-[326px] pr-8 shadow transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/60 hover:shadow-[0_0_12px_2px_rgba(220,38,38,0.4)]"
             />
             {search && (
               <button
@@ -193,7 +203,7 @@ const VideoGrid = () => {
           </div>
           <button
             type="button"
-            className="px-3 py-2 rounded border border-border bg-background text-foreground hover:bg-destructive hover:text-destructive-foreground"
+            className="px-3 py-2 rounded border border-border bg-background text-foreground shadow transition-all duration-200 hover:bg-destructive hover:text-destructive-foreground hover:shadow-[0_0_12px_2px_rgba(220,38,38,0.4)] focus:outline-none focus:ring-2 focus:ring-primary/60"
             onClick={() => {
               setSearch("");
               setFilterGenre("");
