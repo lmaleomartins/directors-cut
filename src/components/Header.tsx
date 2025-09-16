@@ -65,6 +65,13 @@ const Header = () => {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 bg-popover border-border">
                 <DropdownMenuItem 
+                  onClick={() => navigate('/profile')}
+                  className="cursor-pointer hover:bg-accent"
+                >
+                  <User className="mr-2 h-4 w-4" />
+                  Meu Perfil
+                </DropdownMenuItem>
+                <DropdownMenuItem 
                   onClick={() => navigate('/admin')}
                   className="cursor-pointer hover:bg-accent"
                 >
@@ -135,6 +142,14 @@ const Header = () => {
                   <h3 className="text-sm font-medium text-muted-foreground mb-3">Conta</h3>
                   {user ? (
                     <>
+                      <Button
+                        variant="ghost"
+                        onClick={() => navigate('/profile')}
+                        className="w-full justify-start px-3 py-2 h-auto text-foreground hover:text-primary hover:bg-accent"
+                      >
+                        <User className="mr-2 h-4 w-4" />
+                        Meu Perfil
+                      </Button>
                       <Button
                         variant="ghost"
                         onClick={() => navigate('/admin')}

@@ -11,6 +11,7 @@ import Admin from "./pages/Admin";
 import MovieDetail from "./pages/MovieDetail";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
+import Profile from "./pages/Profile";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,7 @@ const App = () => (
               <Route path="/auth/reset-password" element={<ResetPassword />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/movie/:id" element={<MovieDetail />} />
+              <Route path="/profile" element={<Profile />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
