@@ -15,6 +15,10 @@ interface UserRoleData {
   role: UserRole;
   created_at: string;
   created_by: string | null;
+  profiles?: {
+    first_name?: string;
+    last_name?: string;
+  } | null;
 }
 
 export const UserManagement = () => {
@@ -33,20 +37,39 @@ export const UserManagement = () => {
 
   const fetchUsers = async () => {
     try {
-      const { data, error } = await supabase
+      // Primeiro busca os roles dos usuários
+      const { data: userRoles, error: rolesError } = await supabase
         .from('user_roles')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
+      if (rolesError) {
         toast({
           title: 'Erro',
           description: 'Erro ao carregar usuários.',
           variant: 'destructive'
         });
-      } else {
-        setUsers(data || []);
+        return;
       }
+
+      // Depois busca os perfis correspondentes
+      const userIds = userRoles?.map(ur => ur.user_id) || [];
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('user_id', userIds);
+
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+      }
+
+      // Combina os dados
+      const usersWithProfiles = userRoles?.map(userRole => ({
+        ...userRole,
+        profiles: profiles?.find(p => p.user_id === userRole.user_id) || null
+      })) || [];
+
+      setUsers(usersWithProfiles);
     } catch (error) {
       console.error('Error fetching users:', error);
     } finally {
@@ -128,6 +151,13 @@ export const UserManagement = () => {
     }
   };
 
+  const getUserDisplayName = (user: UserRoleData) => {
+    if (user.profiles?.first_name && user.profiles?.last_name) {
+      return `${user.profiles.first_name} ${user.profiles.last_name}`;
+    }
+    return user.user_id;
+  };
+
   if (!canManageUsers()) {
     return null;
   }
@@ -146,7 +176,12 @@ export const UserManagement = () => {
           {users.map((user) => (
             <div key={user.id} className="flex items-center justify-between p-2 border rounded">
               <div className="flex items-center space-x-2">
-                <span className="text-sm">{user.user_id}</span>
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium">{getUserDisplayName(user)}</span>
+                  {user.profiles?.first_name && (
+                    <span className="text-xs text-muted-foreground">{user.user_id}</span>
+                  )}
+                </div>
                 <Badge variant={getRoleBadgeVariant(user.role)}>
                   {getRoleLabel(user.role)}
                 </Badge>
