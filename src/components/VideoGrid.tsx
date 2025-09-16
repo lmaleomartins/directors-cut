@@ -17,6 +17,8 @@ interface Movie {
 }
 
 const VideoGrid = () => {
+  // Estado para busca
+  const [search, setSearch] = useState("");
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -86,11 +88,23 @@ const VideoGrid = () => {
 
       {/* Catálogo Principal */}
       <section>
-        <h2 className="text-3xl font-bold mb-8 text-center text-foreground">
-          Catálogo
-        </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mx-auto max-w-6xl">
-            {movies.map((movie) => (
+        <h2 className="text-3xl font-bold mb-8 text-center text-foreground">Catálogo</h2>
+        <div className="flex justify-center mb-8">
+          <input
+            type="text"
+            placeholder="Pesquisar por título ou diretor..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="px-3 py-2 rounded border border-border bg-background text-foreground w-64"
+          />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mx-auto max-w-6xl">
+          {movies
+            .filter(movie =>
+              movie.title.toLowerCase().includes(search.toLowerCase()) ||
+              movie.director.toLowerCase().includes(search.toLowerCase())
+            )
+            .map((movie) => (
               <VideoCard key={movie.id} {...movie} />
             ))}
         </div>
