@@ -64,7 +64,7 @@ const VideoGrid = () => {
   }
 
   const featuredMovies = movies.filter(movie => movie.featured);
-  const regularMovies = movies.filter(movie => !movie.featured);
+  // Catálogo agora exibe todos os filmes, inclusive os destacados
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -76,8 +76,8 @@ const VideoGrid = () => {
               Em Destaque
             </span>
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {featuredMovies.map((movie) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mx-auto max-w-4xl">
+            {featuredMovies.slice(0, 3).map((movie) => (
               <VideoCard key={movie.id} {...movie} />
             ))}
           </div>
@@ -89,10 +89,10 @@ const VideoGrid = () => {
         <h2 className="text-3xl font-bold mb-8 text-center text-foreground">
           Catálogo
         </h2>
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mx-auto max-w-6xl">
-          {regularMovies.map((movie) => (
-            <VideoCard key={movie.id} {...movie} />
-          ))}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mx-auto max-w-6xl">
+            {movies.map((movie) => (
+              <VideoCard key={movie.id} {...movie} />
+            ))}
         </div>
       </section>
     </div>
