@@ -60,7 +60,22 @@ const GENRE_OPTIONS = [
 ];
 
 const Admin = () => {
+  const [profile, setProfile] = useState<{ first_name?: string; last_name?: string } | null>(null);
   const { user, signOut } = useAuth();
+  // Buscar perfil do usuário logado
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (user?.id) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('user_id', user.id)
+          .single();
+        if (!error && data) setProfile(data);
+      }
+    };
+    fetchProfile();
+  }, [user]);
   const { userRole, canManageAllMovies, canManageUsers, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
   const [movies, setMovies] = useState<Movie[]>([]);
@@ -244,9 +259,12 @@ const Admin = () => {
               <h1 className="text-2xl font-bold text-foreground">Admin Panel</h1>
               <div className="flex items-center space-x-2">
                 <p className="text-sm text-muted-foreground">Perfil:</p>
-                <Badge variant={getRoleBadgeVariant()}>
-                  {getRoleLabel()}
-                </Badge>
+                  <span className="font-semibold text-foreground">
+                    {profile?.first_name || ''} {profile?.last_name || ''}
+                  </span>
+                  <span className={`px-2 py-1 rounded text-xs font-semibold ${userRole === 'master' ? 'bg-gradient-to-r from-primary to-accent text-white' : userRole === 'admin' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                    {userRole === 'master' ? 'Master' : userRole === 'admin' ? 'Admin' : 'Usuário'}
+                  </span>
               </div>
             </div>
           </div>
