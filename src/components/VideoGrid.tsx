@@ -118,12 +118,12 @@ const VideoGrid = () => {
               placeholder="Pesquisar por título ou diretor..."
               value={search}
               onChange={e => { setSearch(e.target.value); setPage(1); }}
-              className="px-3 py-2 rounded border border-border bg-background text-foreground w-64 pr-8"
+              className="px-3 py-2 rounded-lg border border-border bg-background text-foreground w-64 pr-8 shadow transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/60 hover:shadow-[0_0_12px_2px_rgba(220,38,38,0.4)]"
             />
             {search && (
               <button
                 type="button"
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-destructive"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-destructive bg-background rounded-full w-6 h-6 flex items-center justify-center shadow hover:shadow-[0_0_8px_2px_rgba(220,38,38,0.4)] transition-all duration-200"
                 onClick={() => { setSearch(""); setPage(1); }}
                 aria-label="Limpar busca"
               >
@@ -135,7 +135,7 @@ const VideoGrid = () => {
             <select
               value={filterGenre}
               onChange={e => { setFilterGenre(e.target.value); setPage(1); }}
-              className="px-3 py-2 rounded border border-border bg-background text-foreground pr-8"
+              className="px-3 py-2 rounded-lg border border-border bg-background text-foreground pr-8 shadow transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/60 hover:shadow-[0_0_12px_2px_rgba(220,38,38,0.4)]"
             >
               <option value="">Gênero</option>
               {genreOptions.map(g => <option key={g} value={g}>{g}</option>)}
@@ -143,7 +143,7 @@ const VideoGrid = () => {
             {filterGenre && (
               <button
                 type="button"
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-destructive"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-destructive bg-background rounded-full w-6 h-6 flex items-center justify-center shadow hover:shadow-[0_0_8px_2px_rgba(220,38,38,0.4)] transition-all duration-200"
                 onClick={() => { setFilterGenre(""); setPage(1); }}
                 aria-label="Remover filtro gênero"
               >
@@ -155,7 +155,7 @@ const VideoGrid = () => {
             <select
               value={filterYear}
               onChange={e => { setFilterYear(e.target.value); setPage(1); }}
-              className="px-3 py-2 rounded border border-border bg-background text-foreground pr-8"
+              className="px-3 py-2 rounded-lg border border-border bg-background text-foreground pr-8 shadow transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/60 hover:shadow-[0_0_12px_2px_rgba(220,38,38,0.4)]"
             >
               <option value="">Ano</option>
               {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
@@ -163,7 +163,7 @@ const VideoGrid = () => {
             {filterYear && (
               <button
                 type="button"
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-destructive"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-destructive bg-background rounded-full w-6 h-6 flex items-center justify-center shadow hover:shadow-[0_0_8px_2px_rgba(220,38,38,0.4)] transition-all duration-200"
                 onClick={() => { setFilterYear(""); setPage(1); }}
                 aria-label="Remover filtro ano"
               >
@@ -175,7 +175,7 @@ const VideoGrid = () => {
             <select
               value={filterDuration}
               onChange={e => { setFilterDuration(e.target.value); setPage(1); }}
-              className="px-3 py-2 rounded border border-border bg-background text-foreground pr-8"
+              className="px-3 py-2 rounded-lg border border-border bg-background text-foreground pr-8 shadow transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/60 hover:shadow-[0_0_12px_2px_rgba(220,38,38,0.4)]"
             >
               <option value="">Duração</option>
               {durationOptions.map(d => <option key={d} value={d}>{d}</option>)}
@@ -183,7 +183,7 @@ const VideoGrid = () => {
             {filterDuration && (
               <button
                 type="button"
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-destructive"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-destructive bg-background rounded-full w-6 h-6 flex items-center justify-center shadow hover:shadow-[0_0_8px_2px_rgba(220,38,38,0.4)] transition-all duration-200"
                 onClick={() => { setFilterDuration(""); setPage(1); }}
                 aria-label="Remover filtro duração"
               >
