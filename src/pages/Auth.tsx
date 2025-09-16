@@ -182,6 +182,7 @@ const Auth = () => {
                         onChange={(e) => setPassword(e.target.value)}
                         className="pl-10 bg-input border-border"
                         required
+                        togglePassword
                       />
                     </div>
                   </div>
@@ -271,6 +272,7 @@ const Auth = () => {
                         onChange={(e) => setPassword(e.target.value)}
                         className="pl-10 bg-input border-border"
                         required
+                        togglePassword
                       />
                     </div>
                   </div>

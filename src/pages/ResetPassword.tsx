@@ -141,6 +141,7 @@ const ResetPassword = () => {
                   className="pl-10 bg-input border-border"
                   required
                   minLength={6}
+                  togglePassword
                 />
               </div>
             </div>
@@ -158,6 +159,7 @@ const ResetPassword = () => {
                   className="pl-10 bg-input border-border"
                   required
                   minLength={6}
+                  togglePassword
                 />
               </div>
             </div>
