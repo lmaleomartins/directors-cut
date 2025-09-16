@@ -203,7 +203,7 @@ const VideoGrid = () => {
           </div>
           <button
             type="button"
-            className="px-3 py-2 rounded border border-border bg-background text-foreground shadow transition-all duration-200 hover:bg-destructive hover:text-destructive-foreground hover:shadow-[0_0_12px_2px_rgba(220,38,38,0.4)] focus:outline-none focus:ring-2 focus:ring-primary/60"
+            className="px-3 py-2 rounded-lg border border-border bg-background text-foreground shadow transition-all duration-200 hover:bg-destructive hover:text-destructive-foreground hover:shadow-[0_0_12px_2px_rgba(220,38,38,0.4)] focus:outline-none focus:ring-2 focus:ring-primary/60"
             onClick={() => {
               setSearch("");
               setFilterGenre("");
