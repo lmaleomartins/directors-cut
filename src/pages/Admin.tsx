@@ -132,7 +132,7 @@ const Admin = () => {
     setThumbnail(movie.thumbnail || '');
     setVideoUrl(movie.video_url || '');
     setSynopsis(movie.synopsis || '');
-    setFeatured(movie.featured);
+    setFeatured(canManageAllMovies() ? movie.featured : false);
     setDialogOpen(true);
   };
 
@@ -149,7 +149,7 @@ const Admin = () => {
       thumbnail: thumbnail || null,
       video_url: videoUrl || null,
       synopsis: synopsis || null,
-      featured,
+      featured: canManageAllMovies() ? featured : (editingMovie?.featured || false),
       created_by: user.id
     };
 
@@ -459,16 +459,18 @@ const Admin = () => {
                       />
                     </div>
 
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id="featured"
-                        checked={featured}
-                        onCheckedChange={setFeatured}
-                      />
-                      <Label htmlFor="featured" className="text-sm">
-                        Filme em destaque
-                      </Label>
-                    </div>
+                    {canManageAllMovies() && (
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          id="featured"
+                          checked={featured}
+                          onCheckedChange={setFeatured}
+                        />
+                        <Label htmlFor="featured" className="text-sm">
+                          Filme em destaque
+                        </Label>
+                      </div>
+                    )}
 
                     <div className="flex justify-end space-x-2 pt-4">
                       <Button
