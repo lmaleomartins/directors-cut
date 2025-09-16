@@ -1,22 +1,20 @@
 ## Project info
 
-**URL**: https://lovable.dev/projects/dc879b82-7487-4363-9146-114f7f05187f
-
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
+# 1 - Clone o repositório para a sua máquina.
 git clone <YOUR_GIT_URL>
 
-# Step 2: Navigate to the project directory.
+# 2 - Navegue para o diretório do projeto.
 cd <YOUR_PROJECT_NAME>
 
-# Step 3: Install the necessary dependencies.
+# 3 -  Instale as dependências necessárias.
 npm i
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# 4 - Inicie o desenvolvimento com o servidor aberto e livre-preview.
 npm run dev
 ```
 
-## What technologies are used for this project?
+## Tecnologias utilizadas no projetoq
 
 This project is built with:
 
