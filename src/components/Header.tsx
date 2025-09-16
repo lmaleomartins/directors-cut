@@ -95,7 +95,7 @@ const Header = () => {
               className="border-border hidden md:inline-flex"
             >
               <User className="mr-2 h-4 w-4" />
-              Admin
+              Entrar
             </Button>
           )}
 
@@ -174,7 +174,7 @@ const Header = () => {
                       className="w-full justify-start px-3 py-2 h-auto text-foreground hover:text-primary hover:bg-accent"
                     >
                       <User className="mr-2 h-4 w-4" />
-                      Admin
+                      Entrar
                     </Button>
                   )}
                 </div>
