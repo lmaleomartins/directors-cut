@@ -2,13 +2,11 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserRole, UserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus, Trash2 } from 'lucide-react';
+import { Edit, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface UserRoleData {
@@ -23,10 +21,8 @@ export const UserManagement = () => {
   const { canManageUsers } = useUserRole();
   const [users, setUsers] = useState<UserRoleData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [newUserEmail, setNewUserEmail] = useState('');
-  const [newUserRole, setNewUserRole] = useState<UserRole>('admin');
-  const [isCreating, setIsCreating] = useState(false);
+  const [editingUser, setEditingUser] = useState<UserRoleData | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -58,59 +54,37 @@ export const UserManagement = () => {
     }
   };
 
-  const createNewAdmin = async () => {
-    if (!newUserEmail || !newUserRole) return;
-
-    setIsCreating(true);
+  const updateUserRole = async (userId: string, newRole: UserRole) => {
+    setIsUpdating(true);
     try {
-      // First, create the user account
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: newUserEmail,
-        password: 'temp123!', // Temporary password - user should reset
-        email_confirm: true
-      });
-
-      if (authError) {
-        toast({
-          title: 'Erro',
-          description: `Erro ao criar usuário: ${authError.message}`,
-          variant: 'destructive'
-        });
-        return;
-      }
-
-      // Then update their role
-      const { error: roleError } = await supabase
+      const { error } = await supabase
         .from('user_roles')
-        .update({ role: newUserRole })
-        .eq('user_id', authData.user.id);
+        .update({ role: newRole })
+        .eq('user_id', userId);
 
-      if (roleError) {
+      if (error) {
         toast({
           title: 'Erro',
-          description: 'Erro ao atribuir role ao usuário.',
+          description: 'Erro ao atualizar perfil do usuário.',
           variant: 'destructive'
         });
       } else {
         toast({
           title: 'Sucesso',
-          description: `${newUserRole === 'admin' ? 'Admin' : 'Usuário'} criado com sucesso! Senha temporária: temp123!`,
-          duration: 5000
+          description: `Perfil atualizado para ${getRoleLabel(newRole)}.`
         });
-        setNewUserEmail('');
-        setNewUserRole('admin');
-        setIsDialogOpen(false);
+        setEditingUser(null);
         fetchUsers();
       }
     } catch (error) {
-      console.error('Error creating user:', error);
+      console.error('Error updating user role:', error);
       toast({
         title: 'Erro',
-        description: 'Erro inesperado ao criar usuário.',
+        description: 'Erro inesperado ao atualizar perfil.',
         variant: 'destructive'
       });
     } finally {
-      setIsCreating(false);
+      setIsUpdating(false);
     }
   };
 
@@ -164,52 +138,8 @@ export const UserManagement = () => {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader>
         <CardTitle>Gerenciar Usuários</CardTitle>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <UserPlus className="mr-2 h-4 w-4" />
-              Novo Admin
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Criar Novo Admin</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={newUserEmail}
-                  onChange={(e) => setNewUserEmail(e.target.value)}
-                  placeholder="admin@exemplo.com"
-                />
-              </div>
-              <div>
-                <Label htmlFor="role">Tipo de Usuário</Label>
-                <Select value={newUserRole} onValueChange={(value: UserRole) => setNewUserRole(value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="user">Usuário</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button 
-                onClick={createNewAdmin} 
-                disabled={isCreating || !newUserEmail}
-                className="w-full"
-              >
-                {isCreating ? 'Criando...' : 'Criar Usuario'}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
@@ -221,15 +151,57 @@ export const UserManagement = () => {
                   {getRoleLabel(user.role)}
                 </Badge>
               </div>
-              {user.role !== 'master' && (
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => deleteUser(user.user_id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              )}
+              <div className="flex items-center space-x-2">
+                {user.role !== 'master' && (
+                  <>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setEditingUser(user)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Editar Perfil do Usuário</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <p className="text-sm text-muted-foreground">ID do Usuário:</p>
+                            <p className="text-sm font-mono">{user.user_id}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground mb-2">Novo Perfil:</p>
+                            <Select 
+                              defaultValue={user.role}
+                              onValueChange={(value: UserRole) => updateUserRole(user.user_id, value)}
+                              disabled={isUpdating}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="admin">Admin</SelectItem>
+                                <SelectItem value="user">Usuário</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => deleteUser(user.user_id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
           ))}
         </div>
