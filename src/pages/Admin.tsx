@@ -262,7 +262,7 @@ const Admin = () => {
                   <span className="font-semibold text-foreground">
                     {profile?.first_name || ''} {profile?.last_name || ''}
                   </span>
-                  <span className={`px-2 py-1 rounded text-xs font-semibold ${userRole === 'master' ? 'bg-gradient-to-r from-primary to-accent text-white' : userRole === 'admin' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                  <span className={`px-2 py-1 rounded text-xs font-semibold ${userRole === 'master' ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white' : userRole === 'admin' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
                     {userRole === 'master' ? 'Master' : userRole === 'admin' ? 'Admin' : 'Usuário'}
                   </span>
               </div>

@@ -182,9 +182,11 @@ export const UserManagement = () => {
                     <span className="text-xs text-muted-foreground">{user.user_id}</span>
                   )}
                 </div>
-                <Badge variant={getRoleBadgeVariant(user.role)}>
-                  {getRoleLabel(user.role)}
-                </Badge>
+                {user.role === 'master' ? (
+                  <span className="px-2 py-1 rounded text-xs font-semibold bg-gradient-to-r from-blue-500 to-purple-500 text-white">Master</span>
+                ) : (
+                  <Badge variant={getRoleBadgeVariant(user.role)}>{getRoleLabel(user.role)}</Badge>
+                )}
               </div>
               <div className="flex items-center space-x-2">
                 {user.role !== 'master' && (
