@@ -7,6 +7,7 @@ import { ArrowLeft, Play, Calendar, Clock, Eye, Film, Maximize, Minimize } from 
 import { toast } from 'sonner';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import VideoEmbedWithFallback from '@/components/VideoEmbedWithFallback';
 
 interface Movie {
   id: string;
@@ -212,14 +213,7 @@ const MovieDetail = () => {
               <div className="mb-8">
                 <div className="bg-black rounded-lg overflow-hidden shadow-cinema">
                   {isEmbeddableVideo(movie.video_url) ? (
-                    <iframe
-                      src={getVideoEmbedUrl(movie.video_url)}
-                      className="w-full aspect-video"
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      allowFullScreen
-                      title={movie.title}
-                    />
+                    <VideoEmbedWithFallback url={movie.video_url} title={movie.title} />
                   ) : (
                     <video 
                       controls 
