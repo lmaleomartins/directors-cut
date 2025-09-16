@@ -17,10 +17,32 @@ interface Movie {
 }
 
 const VideoGrid = () => {
-  // Estado para busca
-  const [search, setSearch] = useState("");
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [filterGenre, setFilterGenre] = useState("");
+  const [filterYear, setFilterYear] = useState("");
+  const [filterDuration, setFilterDuration] = useState("");
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 8;
+
+  // Gêneros, anos e durações disponíveis
+  const genreOptions = Array.from(new Set(movies.map(m => Array.isArray(m.genre) ? m.genre : [m.genre]).flat())).filter(Boolean);
+  const yearOptions = Array.from(new Set(movies.map(m => m.year))).sort((a, b) => b - a);
+  const durationOptions = Array.from(new Set(movies.map(m => m.duration))).filter(Boolean);
+
+
+  // Filtragem e busca
+  const filteredMovies = movies
+    .filter(movie =>
+      (movie.title.toLowerCase().includes(search.toLowerCase()) ||
+      movie.director.toLowerCase().includes(search.toLowerCase())) &&
+      (!filterGenre || (Array.isArray(movie.genre) ? movie.genre.includes(filterGenre) : movie.genre === filterGenre)) &&
+      (!filterYear || movie.year.toString() === filterYear) &&
+      (!filterDuration || movie.duration === filterDuration)
+    );
+  const paginatedMovies = filteredMovies.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages = Math.ceil(filteredMovies.length / PAGE_SIZE);
 
   useEffect(() => {
     fetchMovies();
@@ -89,25 +111,60 @@ const VideoGrid = () => {
       {/* Catálogo Principal */}
       <section>
         <h2 className="text-3xl font-bold mb-8 text-center text-foreground">Catálogo</h2>
-        <div className="flex justify-center mb-8">
+        <div className="flex flex-wrap gap-4 justify-center mb-8">
           <input
             type="text"
             placeholder="Pesquisar por título ou diretor..."
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={e => { setSearch(e.target.value); setPage(1); }}
             className="px-3 py-2 rounded border border-border bg-background text-foreground w-64"
           />
+          <select
+            value={filterGenre}
+            onChange={e => { setFilterGenre(e.target.value); setPage(1); }}
+            className="px-3 py-2 rounded border border-border bg-background text-foreground"
+          >
+            <option value="">Gênero</option>
+            {genreOptions.map(g => <option key={g} value={g}>{g}</option>)}
+          </select>
+          <select
+            value={filterYear}
+            onChange={e => { setFilterYear(e.target.value); setPage(1); }}
+            className="px-3 py-2 rounded border border-border bg-background text-foreground"
+          >
+            <option value="">Ano</option>
+            {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
+          </select>
+          <select
+            value={filterDuration}
+            onChange={e => { setFilterDuration(e.target.value); setPage(1); }}
+            className="px-3 py-2 rounded border border-border bg-background text-foreground"
+          >
+            <option value="">Duração</option>
+            {durationOptions.map(d => <option key={d} value={d}>{d}</option>)}
+          </select>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mx-auto max-w-6xl">
-          {movies
-            .filter(movie =>
-              movie.title.toLowerCase().includes(search.toLowerCase()) ||
-              movie.director.toLowerCase().includes(search.toLowerCase())
-            )
-            .map((movie) => (
-              <VideoCard key={movie.id} {...movie} />
-            ))}
+          {paginatedMovies.map((movie) => (
+            <VideoCard key={movie.id} {...movie} />
+          ))}
         </div>
+        {/* Paginação */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-2 mt-8">
+            <button
+              className="px-3 py-1 rounded border border-border bg-background text-foreground disabled:opacity-50"
+              onClick={() => setPage(page - 1)}
+              disabled={page === 1}
+            >Anterior</button>
+            <span className="px-2">Página {page} de {totalPages}</span>
+            <button
+              className="px-3 py-1 rounded border border-border bg-background text-foreground disabled:opacity-50"
+              onClick={() => setPage(page + 1)}
+              disabled={page === totalPages}
+            >Próxima</button>
+          </div>
+        )}
       </section>
     </div>
   );
