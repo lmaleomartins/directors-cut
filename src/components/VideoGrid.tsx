@@ -111,38 +111,99 @@ const VideoGrid = () => {
       {/* Catálogo Principal */}
       <section>
         <h2 className="text-3xl font-bold mb-8 text-center text-foreground">Catálogo</h2>
-        <div className="flex flex-wrap gap-4 justify-center mb-8">
-          <input
-            type="text"
-            placeholder="Pesquisar por título ou diretor..."
-            value={search}
-            onChange={e => { setSearch(e.target.value); setPage(1); }}
-            className="px-3 py-2 rounded border border-border bg-background text-foreground w-64"
-          />
-          <select
-            value={filterGenre}
-            onChange={e => { setFilterGenre(e.target.value); setPage(1); }}
-            className="px-3 py-2 rounded border border-border bg-background text-foreground"
+        <div className="flex flex-wrap gap-4 justify-center mb-8 items-center">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Pesquisar por título ou diretor..."
+              value={search}
+              onChange={e => { setSearch(e.target.value); setPage(1); }}
+              className="px-3 py-2 rounded border border-border bg-background text-foreground w-64 pr-8"
+            />
+            {search && (
+              <button
+                type="button"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-destructive"
+                onClick={() => { setSearch(""); setPage(1); }}
+                aria-label="Limpar busca"
+              >
+                ×
+              </button>
+            )}
+          </div>
+          <div className="relative">
+            <select
+              value={filterGenre}
+              onChange={e => { setFilterGenre(e.target.value); setPage(1); }}
+              className="px-3 py-2 rounded border border-border bg-background text-foreground pr-8"
+            >
+              <option value="">Gênero</option>
+              {genreOptions.map(g => <option key={g} value={g}>{g}</option>)}
+            </select>
+            {filterGenre && (
+              <button
+                type="button"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-destructive"
+                onClick={() => { setFilterGenre(""); setPage(1); }}
+                aria-label="Remover filtro gênero"
+              >
+                ×
+              </button>
+            )}
+          </div>
+          <div className="relative">
+            <select
+              value={filterYear}
+              onChange={e => { setFilterYear(e.target.value); setPage(1); }}
+              className="px-3 py-2 rounded border border-border bg-background text-foreground pr-8"
+            >
+              <option value="">Ano</option>
+              {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+            {filterYear && (
+              <button
+                type="button"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-destructive"
+                onClick={() => { setFilterYear(""); setPage(1); }}
+                aria-label="Remover filtro ano"
+              >
+                ×
+              </button>
+            )}
+          </div>
+          <div className="relative">
+            <select
+              value={filterDuration}
+              onChange={e => { setFilterDuration(e.target.value); setPage(1); }}
+              className="px-3 py-2 rounded border border-border bg-background text-foreground pr-8"
+            >
+              <option value="">Duração</option>
+              {durationOptions.map(d => <option key={d} value={d}>{d}</option>)}
+            </select>
+            {filterDuration && (
+              <button
+                type="button"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-destructive"
+                onClick={() => { setFilterDuration(""); setPage(1); }}
+                aria-label="Remover filtro duração"
+              >
+                ×
+              </button>
+            )}
+          </div>
+          <button
+            type="button"
+            className="px-3 py-2 rounded border border-border bg-background text-foreground hover:bg-destructive hover:text-destructive-foreground"
+            onClick={() => {
+              setSearch("");
+              setFilterGenre("");
+              setFilterYear("");
+              setFilterDuration("");
+              setPage(1);
+            }}
           >
-            <option value="">Gênero</option>
-            {genreOptions.map(g => <option key={g} value={g}>{g}</option>)}
-          </select>
-          <select
-            value={filterYear}
-            onChange={e => { setFilterYear(e.target.value); setPage(1); }}
-            className="px-3 py-2 rounded border border-border bg-background text-foreground"
-          >
-            <option value="">Ano</option>
-            {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
-          </select>
-          <select
-            value={filterDuration}
-            onChange={e => { setFilterDuration(e.target.value); setPage(1); }}
-            className="px-3 py-2 rounded border border-border bg-background text-foreground"
-          >
-            <option value="">Duração</option>
-            {durationOptions.map(d => <option key={d} value={d}>{d}</option>)}
-          </select>
+            Limpar filtros
+          </button>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mx-auto max-w-6xl">
           {paginatedMovies.map((movie) => (
