@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { ChangeEvent } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 
 const Profile = () => {
+  const [uploading, setUploading] = useState(false);
   const { user } = useAuth();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -69,12 +71,35 @@ const Profile = () => {
           </Button>
           <div className="flex flex-col items-center gap-4 mb-6">
             {/* Foto de perfil */}
-            <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center text-3xl font-bold">
+            <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center text-3xl font-bold relative">
               {avatarUrl ? (
                 <img src={avatarUrl} alt="Avatar" className="w-full h-full rounded-full object-cover" />
               ) : (
                 (firstName?.[0] || '') + (lastName?.[0] || '')
               )}
+              {edit && (
+                <label className="absolute bottom-0 right-0 bg-primary text-white rounded-full p-2 cursor-pointer shadow-lg hover:bg-primary/80 transition">
+                  <input type="file" accept="image/*" className="hidden" onChange={async (e: ChangeEvent<HTMLInputElement>) => {
+                    if (!e.target.files || !user) return;
+                    setUploading(true);
+                    const file = e.target.files[0];
+                    const fileExt = file.name.split('.').pop();
+                    const fileName = `${user.id}.${fileExt}`;
+                    const { data, error } = await supabase.storage.from('avatars').upload(fileName, file, { upsert: true });
+                    if (error) {
+                      toast.error('Erro ao fazer upload do avatar: ' + error.message);
+                    } else {
+                      const url = supabase.storage.from('avatars').getPublicUrl(fileName).data.publicUrl;
+                      setAvatarUrl(url);
+                      await supabase.auth.updateUser({ data: { avatarUrl: url } });
+                      toast.success('Foto de perfil atualizada!');
+                    }
+                    setUploading(false);
+                  }} />
+                  <span className="text-xs">Alterar</span>
+                </label>
+              )}
+              {uploading && <span className="absolute left-1/2 -translate-x-1/2 bottom-2 text-xs text-muted-foreground">Enviando...</span>}
             </div>
             {/* Nome e e-mail */}
             <div className="text-center">
