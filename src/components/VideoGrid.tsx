@@ -3,6 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import VideoCard from "./VideoCard";
 import { Film } from "lucide-react";
 import { Search } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
 interface Movie {
@@ -142,68 +144,46 @@ const VideoGrid = () => {
             )}
           </div>
           <div className="relative">
-            <select
-              value={filterGenre}
-              onChange={e => { setFilterGenre(e.target.value); setPage(1); }}
-              className="px-3 py-2 rounded-lg border border-border bg-background text-foreground pr-8 shadow transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/60 hover:shadow-[0_0_12px_2px_rgba(220,38,38,0.4)]"
-            >
-              <option value="">Gênero</option>
-              {genreOptions.map(g => <option key={g} value={g}>{g}</option>)}
-            </select>
-            {filterGenre && (
-              <button
-                type="button"
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-destructive bg-background rounded-full w-6 h-6 flex items-center justify-center shadow hover:shadow-[0_0_8px_2px_rgba(220,38,38,0.4)] transition-all duration-200"
-                onClick={() => { setFilterGenre(""); setPage(1); }}
-                aria-label="Remover filtro gênero"
-              >
-                ×
-              </button>
-            )}
+            <Select value={filterGenre} onValueChange={(value) => { setFilterGenre(value); setPage(1); }}>
+              <SelectTrigger className="w-[140px] bg-background border-border">
+                <SelectValue placeholder="Gênero" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover border-border max-h-60">
+                <SelectItem value="">Todos os gêneros</SelectItem>
+                {genreOptions.map(g => (
+                  <SelectItem key={g} value={g}>{g}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="relative">
-            <select
-              value={filterYear}
-              onChange={e => { setFilterYear(e.target.value); setPage(1); }}
-              className="px-3 py-2 rounded-lg border border-border bg-background text-foreground pr-8 shadow transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/60 hover:shadow-[0_0_12px_2px_rgba(220,38,38,0.4)]"
-            >
-              <option value="">Ano</option>
-              {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
-            </select>
-            {filterYear && (
-              <button
-                type="button"
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-destructive bg-background rounded-full w-6 h-6 flex items-center justify-center shadow hover:shadow-[0_0_8px_2px_rgba(220,38,38,0.4)] transition-all duration-200"
-                onClick={() => { setFilterYear(""); setPage(1); }}
-                aria-label="Remover filtro ano"
-              >
-                ×
-              </button>
-            )}
+            <Select value={filterYear} onValueChange={(value) => { setFilterYear(value); setPage(1); }}>
+              <SelectTrigger className="w-[120px] bg-background border-border">
+                <SelectValue placeholder="Ano" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover border-border max-h-60">
+                <SelectItem value="">Todos os anos</SelectItem>
+                {yearOptions.map(y => (
+                  <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="relative">
-            <select
-              value={filterDuration}
-              onChange={e => { setFilterDuration(e.target.value); setPage(1); }}
-              className="px-3 py-2 rounded-lg border border-border bg-background text-foreground pr-8 shadow transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/60 hover:shadow-[0_0_12px_2px_rgba(220,38,38,0.4)]"
-            >
-              <option value="">Duração</option>
-              {durationOptions.map(d => <option key={d} value={d}>{d}</option>)}
-            </select>
-            {filterDuration && (
-              <button
-                type="button"
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-destructive bg-background rounded-full w-6 h-6 flex items-center justify-center shadow hover:shadow-[0_0_8px_2px_rgba(220,38,38,0.4)] transition-all duration-200"
-                onClick={() => { setFilterDuration(""); setPage(1); }}
-                aria-label="Remover filtro duração"
-              >
-                ×
-              </button>
-            )}
+            <Select value={filterDuration} onValueChange={(value) => { setFilterDuration(value); setPage(1); }}>
+              <SelectTrigger className="w-[160px] bg-background border-border">
+                <SelectValue placeholder="Duração" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover border-border max-h-60">
+                <SelectItem value="">Todas as durações</SelectItem>
+                {durationOptions.map(d => (
+                  <SelectItem key={d} value={d}>{d}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <button
-            type="button"
-            className="px-3 py-2 rounded-lg border border-border bg-background text-foreground shadow transition-all duration-200 hover:bg-destructive hover:text-destructive-foreground hover:shadow-[0_0_12px_2px_rgba(220,38,38,0.4)] focus:outline-none focus:ring-2 focus:ring-primary/60"
+          <Button
+            variant="outline"
             onClick={() => {
               setSearch("");
               setFilterGenre("");
@@ -211,9 +191,10 @@ const VideoGrid = () => {
               setFilterDuration("");
               setPage(1);
             }}
+            className="border-border hover:bg-destructive hover:text-destructive-foreground"
           >
             Limpar filtros
-          </button>
+          </Button>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mx-auto max-w-6xl">
           {paginatedMovies.map((movie) => (
@@ -223,17 +204,23 @@ const VideoGrid = () => {
         {/* Paginação */}
         {totalPages > 1 && (
           <div className="flex justify-center items-center gap-2 mt-8">
-            <button
-              className="px-3 py-1 rounded border border-border bg-background text-foreground disabled:opacity-50"
+            <Button
+              variant="outline"
               onClick={() => setPage(page - 1)}
               disabled={page === 1}
-            >Anterior</button>
-            <span className="px-2">Página {page} de {totalPages}</span>
-            <button
-              className="px-3 py-1 rounded border border-border bg-background text-foreground disabled:opacity-50"
+              className="border-border"
+            >
+              Anterior
+            </Button>
+            <span className="px-2 text-foreground">Página {page} de {totalPages}</span>
+            <Button
+              variant="outline"
               onClick={() => setPage(page + 1)}
               disabled={page === totalPages}
-            >Próxima</button>
+              className="border-border"
+            >
+              Próxima
+            </Button>
           </div>
         )}
       </section>
