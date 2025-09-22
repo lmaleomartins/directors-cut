@@ -155,6 +155,18 @@ const Admin = () => {
     e.preventDefault();
     if (!user) return;
 
+    // Validação de limite de filmes em destaque no frontend
+    if (canManageAllMovies() && featured) {
+      const currentFeaturedCount = movies.filter(movie => 
+        movie.featured && movie.id !== editingMovie?.id
+      ).length;
+      
+      if (currentFeaturedCount >= 3) {
+        toast.error('Limite máximo de 3 filmes em destaque atingido. Desmarque outro filme primeiro.');
+        return;
+      }
+    }
+
     const movieData = {
       title,
       director,
@@ -190,7 +202,12 @@ const Admin = () => {
       resetForm();
       fetchMovies();
     } catch (error: any) {
-      toast.error('Erro ao salvar filme: ' + error.message);
+      // Mensagem mais amigável para o erro do limite de filmes em destaque
+      if (error.message.includes('Limite máximo de 3 filmes em destaque')) {
+        toast.error('Limite máximo de 3 filmes em destaque atingido. Desmarque outro filme primeiro.');
+      } else {
+        toast.error('Erro ao salvar filme: ' + error.message);
+      }
     }
   };
 
@@ -484,9 +501,14 @@ const Admin = () => {
                           checked={featured}
                           onCheckedChange={setFeatured}
                         />
-                        <Label htmlFor="featured" className="text-sm">
-                          Filme em destaque
-                        </Label>
+                        <div className="flex flex-col">
+                          <Label htmlFor="featured" className="text-sm">
+                            Filme em destaque
+                          </Label>
+                          <span className="text-xs text-muted-foreground">
+                            {movies.filter(movie => movie.featured && movie.id !== editingMovie?.id).length}/3 filmes em destaque
+                          </span>
+                        </div>
                       </div>
                     )}
 
