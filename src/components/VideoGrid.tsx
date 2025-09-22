@@ -149,7 +149,6 @@ const VideoGrid = () => {
                 <SelectValue placeholder="Gênero" />
               </SelectTrigger>
               <SelectContent className="bg-popover border-border max-h-60">
-                <SelectItem value="">Todos os gêneros</SelectItem>
                 {genreOptions.map(g => (
                   <SelectItem key={g} value={g}>{g}</SelectItem>
                 ))}
@@ -162,7 +161,6 @@ const VideoGrid = () => {
                 <SelectValue placeholder="Ano" />
               </SelectTrigger>
               <SelectContent className="bg-popover border-border max-h-60">
-                <SelectItem value="">Todos os anos</SelectItem>
                 {yearOptions.map(y => (
                   <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
                 ))}
@@ -175,7 +173,6 @@ const VideoGrid = () => {
                 <SelectValue placeholder="Duração" />
               </SelectTrigger>
               <SelectContent className="bg-popover border-border max-h-60">
-                <SelectItem value="">Todas as durações</SelectItem>
                 {durationOptions.map(d => (
                   <SelectItem key={d} value={d}>{d}</SelectItem>
                 ))}
