@@ -145,7 +145,7 @@ const VideoGrid = () => {
           </div>
           <div className="relative">
             <Select value={filterGenre} onValueChange={(value) => { setFilterGenre(value); setPage(1); }}>
-              <SelectTrigger className="w-[140px] bg-background border-border">
+              <SelectTrigger className="w-[140px] bg-background border-border transition-all duration-200 hover:shadow-[0_0_12px_2px_rgba(220,38,38,0.4)]">
                 <SelectValue placeholder="Gênero" />
               </SelectTrigger>
               <SelectContent className="bg-popover border-border max-h-60">
@@ -157,7 +157,7 @@ const VideoGrid = () => {
           </div>
           <div className="relative">
             <Select value={filterYear} onValueChange={(value) => { setFilterYear(value); setPage(1); }}>
-              <SelectTrigger className="w-[120px] bg-background border-border">
+              <SelectTrigger className="w-[120px] bg-background border-border transition-all duration-200 hover:shadow-[0_0_12px_2px_rgba(220,38,38,0.4)]">
                 <SelectValue placeholder="Ano" />
               </SelectTrigger>
               <SelectContent className="bg-popover border-border max-h-60">
@@ -169,7 +169,7 @@ const VideoGrid = () => {
           </div>
           <div className="relative">
             <Select value={filterDuration} onValueChange={(value) => { setFilterDuration(value); setPage(1); }}>
-              <SelectTrigger className="w-[160px] bg-background border-border">
+              <SelectTrigger className="w-[160px] bg-background border-border transition-all duration-200 hover:shadow-[0_0_12px_2px_rgba(220,38,38,0.4)]">
                 <SelectValue placeholder="Duração" />
               </SelectTrigger>
               <SelectContent className="bg-popover border-border max-h-60">
