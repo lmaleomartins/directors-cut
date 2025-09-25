@@ -21,9 +21,11 @@ interface Movie {
   views: number;
   synopsis: string | null;
   featured: boolean;
+  created_by?: string | null;
 }
 
 const MovieDetail = () => {
+  const [creatorName, setCreatorName] = useState<string | null>(null);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [movie, setMovie] = useState<Movie | null>(null);
@@ -57,6 +59,23 @@ const MovieDetail = () => {
       }
 
       setMovie(data);
+
+      // Buscar nome do usuário que inseriu o filme
+      if (data?.created_by) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('user_id', data.created_by)
+          .single();
+        if (profileData) {
+          const name = [profileData.first_name, profileData.last_name].filter(Boolean).join(' ');
+          setCreatorName(name || null);
+        } else {
+          setCreatorName(null);
+        }
+      } else {
+        setCreatorName(null);
+      }
     } catch (error: any) {
       toast.error('Erro ao carregar filme: ' + error.message);
       navigate('/');
@@ -313,6 +332,10 @@ const MovieDetail = () => {
                   <div>
                     <span className="text-muted-foreground">Visualizações:</span>
                     <p className="text-foreground font-medium">{movie.views.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Inserido por:</span>
+                    <p className="text-foreground font-medium">{creatorName ? creatorName : 'Desconhecido'}</p>
                   </div>
                 </div>
               </div>
