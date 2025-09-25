@@ -34,8 +34,8 @@ const VideoCard = ({
   return (
     <Card 
       className={`group overflow-hidden bg-gradient-card border-border hover:shadow-glow transition-all duration-300 cursor-pointer ${
-        featured ? 'ring-2 ring-primary scale-95' : ''
-      }`}
+        featured ? 'ring-2 ring-primary' : ''
+      } h-full w-full max-w-xs flex flex-col`}
       onClick={handleClick}
     >
       <div className="relative aspect-[2/3] overflow-hidden">
