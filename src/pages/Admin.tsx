@@ -34,7 +34,8 @@ interface Movie {
 }
 
 // Opções pré-definidas para os dropdowns
-const YEAR_OPTIONS = Array.from({ length: 2024 - 1895 + 1 }, (_, i) => 2024 - i);
+const CURRENT_YEAR = new Date().getFullYear();
+const YEAR_OPTIONS = Array.from({ length: CURRENT_YEAR - 1895 + 1 }, (_, i) => CURRENT_YEAR - i);
 
 const DURATION_OPTIONS = [
   { value: "Menos de 30 min", label: "Menos de 30 min (Curta-metragem)" },
