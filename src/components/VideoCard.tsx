@@ -59,8 +59,10 @@ const VideoCard = ({
           </Badge>
         )}
         <div className="absolute bottom-2 right-2 flex items-center space-x-2 text-white text-sm">
-          <Clock className="w-4 h-4" />
-          <span>{duration}</span>
+          <span className="flex items-center justify-center bg-black/70 rounded-full px-3 py-1 text-white text-xs font-semibold shadow-md">
+            <Clock className="w-4 h-4 mr-1" />
+            {duration}
+          </span>
         </div>
       </div>
       
