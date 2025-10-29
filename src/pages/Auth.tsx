@@ -8,6 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Film, Lock, Mail, ArrowLeft, User } from 'lucide-react';
 import { toast } from 'sonner';
+import { authSchema } from '@/lib/validationSchemas';
+import { mapToUserError } from '@/lib/errorUtils';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -23,10 +25,18 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
     
+    // Validate input
+    const validation = authSchema.safeParse({ email, password });
+    if (!validation.success) {
+      toast.error(validation.error.issues[0].message);
+      setLoading(false);
+      return;
+    }
+    
     const { error } = await signIn(email, password);
     
     if (error) {
-      toast.error(error.message);
+      toast.error(mapToUserError(error));
     } else {
       toast.success('Login realizado com sucesso!');
       navigate('/admin');
@@ -39,10 +49,18 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
     
+    // Validate input
+    const validation = authSchema.safeParse({ email, password, firstName, lastName });
+    if (!validation.success) {
+      toast.error(validation.error.issues[0].message);
+      setLoading(false);
+      return;
+    }
+    
     const { error } = await signUp(email, password, { firstName, lastName });
     
     if (error) {
-      toast.error(error.message);
+      toast.error(mapToUserError(error));
     } else {
       toast.success('Conta criada com sucesso! Verifique seu email.');
     }
@@ -54,10 +72,18 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
     
+    // Validate email
+    const validation = authSchema.pick({ email: true }).safeParse({ email });
+    if (!validation.success) {
+      toast.error(validation.error.issues[0].message);
+      setLoading(false);
+      return;
+    }
+    
     const { error } = await resetPassword(email);
     
     if (error) {
-      toast.error(error.message);
+      toast.error(mapToUserError(error));
     } else {
       toast.success('Email de recuperação enviado! Verifique sua caixa de entrada.');
       setShowForgotPassword(false);

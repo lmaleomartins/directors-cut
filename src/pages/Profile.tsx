@@ -9,6 +9,8 @@ import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { profileSchema } from '@/lib/validationSchemas';
+import { mapToUserError } from '@/lib/errorUtils';
 
 const Profile = () => {
   const [uploading, setUploading] = useState(false);
@@ -35,15 +37,24 @@ const Profile = () => {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    
+    // Validate input
+    const validation = profileSchema.safeParse({ firstName, lastName, bio });
+    if (!validation.success) {
+      toast.error(validation.error.issues[0].message);
+      setLoading(false);
+      return;
+    }
+    
     const updates = {
-      firstName,
-      lastName,
-      bio,
+      firstName: validation.data.firstName,
+      lastName: validation.data.lastName,
+      bio: validation.data.bio,
       avatarUrl,
     };
     const { error } = await supabase.auth.updateUser({ data: updates });
     if (error) {
-      toast.error('Erro ao atualizar perfil: ' + error.message);
+      toast.error(mapToUserError(error));
     } else {
       toast.success('Perfil atualizado com sucesso!');
       setEdit(false);
@@ -87,7 +98,7 @@ const Profile = () => {
                     const fileName = `${user.id}.${fileExt}`;
                     const { data, error } = await supabase.storage.from('avatars').upload(fileName, file, { upsert: true });
                     if (error) {
-                      toast.error('Erro ao fazer upload do avatar: ' + error.message);
+                      toast.error(mapToUserError(error));
                     } else {
                       const url = supabase.storage.from('avatars').getPublicUrl(fileName).data.publicUrl;
                       setAvatarUrl(url);

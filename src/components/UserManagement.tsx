@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from '@/components/ui/badge';
 import { Edit, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { mapToUserError } from '@/lib/errorUtils';
 
 interface UserRoleData {
   id: string;
@@ -46,7 +47,7 @@ export const UserManagement = () => {
       if (rolesError) {
         toast({
           title: 'Erro',
-          description: 'Erro ao carregar usuários.',
+          description: mapToUserError(rolesError),
           variant: 'destructive'
         });
         return;
@@ -88,7 +89,7 @@ export const UserManagement = () => {
       if (error) {
         toast({
           title: 'Erro',
-          description: 'Erro ao atualizar perfil do usuário.',
+          description: mapToUserError(error),
           variant: 'destructive'
         });
       } else {
@@ -99,11 +100,11 @@ export const UserManagement = () => {
         setEditingUser(null);
         fetchUsers();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating user role:', error);
       toast({
         title: 'Erro',
-        description: 'Erro inesperado ao atualizar perfil.',
+        description: mapToUserError(error),
         variant: 'destructive'
       });
     } finally {
@@ -118,7 +119,7 @@ export const UserManagement = () => {
       if (error) {
         toast({
           title: 'Erro',
-          description: 'Erro ao excluir usuário.',
+          description: mapToUserError(error),
           variant: 'destructive'
         });
       } else {

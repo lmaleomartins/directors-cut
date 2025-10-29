@@ -16,6 +16,8 @@ import { Badge } from "@/components/ui/badge";
 import { Film, Plus, Edit, Trash2, LogOut, Eye, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { UserManagement } from '@/components/UserManagement';
+import { movieSchema } from '@/lib/validationSchemas';
+import { mapToUserError } from '@/lib/errorUtils';
 
 interface Movie {
   id: string;
@@ -119,7 +121,7 @@ const Admin = () => {
       if (error) throw error;
       setMovies(data || []);
     } catch (error: any) {
-      toast.error('Erro ao carregar filmes: ' + error.message);
+      toast.error(mapToUserError(error));
     } finally {
       setLoading(false);
     }
@@ -156,6 +158,23 @@ const Admin = () => {
     e.preventDefault();
     if (!user) return;
 
+    // Validate input first
+    const validation = movieSchema.safeParse({
+      title,
+      director,
+      year,
+      duration,
+      genre,
+      synopsis,
+      thumbnail,
+      video_url: videoUrl
+    });
+    
+    if (!validation.success) {
+      toast.error(validation.error.issues[0].message);
+      return;
+    }
+
     // Validação de limite de filmes em destaque no frontend
     if (canManageAllMovies() && featured) {
       const currentFeaturedCount = movies.filter(movie => 
@@ -169,14 +188,14 @@ const Admin = () => {
     }
 
     const movieData = {
-      title,
-      director,
-      year,
-      duration,
-      genre: genre.join(', '),
-      thumbnail: thumbnail || null,
-      video_url: videoUrl || null,
-      synopsis: synopsis || null,
+      title: validation.data.title,
+      director: validation.data.director,
+      year: validation.data.year,
+      duration: validation.data.duration,
+      genre: validation.data.genre.join(', '),
+      thumbnail: validation.data.thumbnail || null,
+      video_url: validation.data.video_url || null,
+      synopsis: validation.data.synopsis || null,
       featured: canManageAllMovies() ? featured : (editingMovie?.featured || false),
       created_by: user.id
     };
@@ -203,12 +222,7 @@ const Admin = () => {
       resetForm();
       fetchMovies();
     } catch (error: any) {
-      // Mensagem mais amigável para o erro do limite de filmes em destaque
-      if (error.message.includes('Limite máximo de 3 filmes em destaque')) {
-        toast.error('Limite máximo de 3 filmes em destaque atingido. Desmarque outro filme primeiro.');
-      } else {
-        toast.error('Erro ao salvar filme: ' + error.message);
-      }
+      toast.error(mapToUserError(error));
     }
   };
 
@@ -225,7 +239,7 @@ const Admin = () => {
       toast.success('Filme excluído com sucesso!');
       fetchMovies();
     } catch (error: any) {
-      toast.error('Erro ao excluir filme: ' + error.message);
+      toast.error(mapToUserError(error));
     }
   };
 
