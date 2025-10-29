@@ -353,7 +353,7 @@ const Admin = () => {
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
                   <Button 
-                    id="add-filme-button"
+                    id="add-movie-button"
                     className="bg-primary hover:bg-primary/90 text-primary-foreground"
                     onClick={resetForm}
                   >
