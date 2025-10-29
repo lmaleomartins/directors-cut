@@ -215,6 +215,7 @@ const Auth = () => {
                   
                   <Button 
                     type="submit" 
+                    id="login-button"
                     className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                     disabled={loading}
                   >
