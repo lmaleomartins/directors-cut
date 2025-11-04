@@ -1,9 +1,3 @@
-
-"""
-Teste automatizado para adição de filmes - Director's Cut
-Autor: Leonardo Martins
-"""
-
 import time
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -240,7 +234,7 @@ class MovieTest:
                 return False
             except NoSuchElementException:
                 self.last_movie_title = movie_title
-                print(f"Sucesso! Filme '{movie_title}' adicionado ao catálogo")
+                print(f"Filme '{movie_title}' adicionado com sucesso")
                 return True
             
         except Exception as e:

@@ -1,8 +1,3 @@
-#!/usr/bin/env python3
-"""
-Automação: deletar o último filme inserido (primeiro card no Admin)
-"""
-
 import time
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -14,11 +9,12 @@ from selenium.common.exceptions import NoSuchElementException, TimeoutException,
 
 
 class DeleteLastMovieTest:
-	def __init__(self, headless: bool = False, demo_delay: float = 0.0, typing_delay: float = 0.0):
+	def __init__(self, headless: bool = False, demo_delay: float = 0.0, typing_delay: float = 0.0, verbose: bool = False):
 		self.base_url = "https://preview--directors-cut.lovable.app"
 		self.wait_timeout = 15
 		self.demo_delay = max(0.0, demo_delay)
 		self.typing_delay = max(0.0, typing_delay) if typing_delay else (0.08 if self.demo_delay else 0.0)
+		self.verbose = verbose
 
 		options = Options()
 		if headless:
@@ -257,30 +253,32 @@ class DeleteLastMovieTest:
 			# Evitar 'unexpected alert open' sobrescrevendo confirm antes de clicar
 			self.ensure_auto_confirm()
 
-			# Diagnóstico: listar primeiros cards e se possuem ações
-			try:
-				info = self.driver.execute_script(
-					"""
-					const cards = Array.from(document.querySelectorAll('.bg-gradient-card'));
-					return cards.slice(0,6).map((card, i) => {
-						const titleEl = card.querySelector('.text-lg');
-						const actions = card.querySelector('.flex.justify-end.space-x-2');
-						const svg = card.querySelector('svg[data-lucide="trash-2"], svg.lucide-trash-2, svg[class*="trash-2"]');
-						return {
-							index: i,
-							title: titleEl ? titleEl.textContent.trim() : null,
-							hasActions: !!actions,
-							hasTrashIcon: !!svg,
-							buttons: actions ? actions.querySelectorAll('button').length : 0
-						};
-					});
-					"""
-				)
-				if info:
-					for item in info:
-						print(f"Card {item['index']}: '{item['title']}' | actions={item['hasActions']} trashIcon={item['hasTrashIcon']} buttons={item['buttons']}")
-			except Exception:
-				pass
+
+			# Diagnóstico opcional: listar primeiros cards
+			if self.verbose:
+				try:
+					info = self.driver.execute_script(
+						"""
+						const cards = Array.from(document.querySelectorAll('.bg-gradient-card'));
+						return cards.slice(0,6).map((card, i) => {
+							const titleEl = card.querySelector('.text-lg');
+							const actions = card.querySelector('.flex.justify-end.space-x-2');
+							const svg = card.querySelector('svg[data-lucide="trash-2"], svg.lucide-trash-2, svg[class*="trash-2"]');
+							return {
+								index: i,
+								title: titleEl ? titleEl.textContent.trim() : null,
+								hasActions: !!actions,
+								hasTrashIcon: !!svg,
+								buttons: actions ? actions.querySelectorAll('button').length : 0
+							};
+						});
+						"""
+					)
+					if info:
+						for item in info:
+							print(f"Card {item['index']}: '{item['title']}' | actions={item['hasActions']} trashIcon={item['hasTrashIcon']} buttons={item['buttons']}")
+				except Exception:
+					pass
 
 			# Preferir deletar "Teste Automatizado" se existir; senão o primeiro deletável
 			result = self.click_delete("Teste Automatizado")
@@ -315,7 +313,7 @@ def main():
 	DEMO_DELAY = 0.8
 	TYPING_DELAY = 0.08
 
-	test = DeleteLastMovieTest(headless=HEADLESS, demo_delay=DEMO_DELAY, typing_delay=TYPING_DELAY)
+	test = DeleteLastMovieTest(headless=HEADLESS, demo_delay=DEMO_DELAY, typing_delay=TYPING_DELAY, verbose=False)
 	ok = test.run(EMAIL, PASSWORD)
 	exit(0 if ok else 1)
 
