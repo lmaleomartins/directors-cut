@@ -437,12 +437,14 @@ const Admin = () => {
                           <div>
                             <Label htmlFor="duration-hours" className="sr-only">Horas</Label>
                             <Select value={String(durationHours)} onValueChange={(v) => setDurationHours(parseInt(v))}>
-                              <SelectTrigger id="duration-hours" className="bg-input border-border w-full h-10">
+                              <SelectTrigger id="duration-hours" className="bg-input border-border w-full h-10 justify-center text-center">
                                 <SelectValue placeholder="Horas (HH)" />
                               </SelectTrigger>
-                              <SelectContent className="bg-popover border-border max-h-60">
+                              <SelectContent className="bg-popover border-border max-h-60 text-center">
                                 {Array.from({ length: 24 }, (_, i) => i).map((h) => (
-                                  <SelectItem key={h} value={String(h)}>{String(h).padStart(2, '0')}</SelectItem>
+                                  <SelectItem key={h} value={String(h)} className="text-center">
+                                    {String(h).padStart(2, '0')}
+                                  </SelectItem>
                                 ))}
                               </SelectContent>
                             </Select>
@@ -450,18 +452,23 @@ const Admin = () => {
                           <div>
                             <Label htmlFor="duration-minutes" className="sr-only">Minutos</Label>
                             <Select value={String(durationMinutes)} onValueChange={(v) => setDurationMinutes(parseInt(v))}>
-                              <SelectTrigger id="duration-minutes" className="bg-input border-border w-full h-10">
+                              <SelectTrigger id="duration-minutes" className="bg-input border-border w-full h-10 justify-center text-center">
                                 <SelectValue placeholder="Minutos (MM)" />
                               </SelectTrigger>
-                              <SelectContent className="bg-popover border-border max-h-60">
+                              <SelectContent className="bg-popover border-border max-h-60 text-center">
                                 {Array.from({ length: 60 }, (_, i) => i).map((m) => (
-                                  <SelectItem key={m} value={String(m)}>{String(m).padStart(2, '0')}</SelectItem>
+                                  <SelectItem key={m} value={String(m)} className="text-center">
+                                    {String(m).padStart(2, '0')}
+                                  </SelectItem>
                                 ))}
                               </SelectContent>
                             </Select>
                           </div>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">Horas / Minutos</p>
+                        <div className="grid grid-cols-2 gap-2 mt-1">
+                          <span className="text-xs text-muted-foreground text-center">Horas</span>
+                          <span className="text-xs text-muted-foreground text-center">Minutos</span>
+                        </div>
                       </div>
                       
                       <div className="space-y-2">
