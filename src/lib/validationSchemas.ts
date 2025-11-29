@@ -52,9 +52,9 @@ export const movieSchema = z.object({
     .optional()
     .or(z.literal('')),
   video_url: z.string()
+    .trim()
+    .min(1, { message: 'URL do vídeo é obrigatória' })
     .url({ message: 'URL do vídeo inválida' })
-    .optional()
-    .or(z.literal(''))
 });
 
 export const profileSchema = z.object({

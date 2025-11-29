@@ -91,6 +91,8 @@ const Admin = () => {
   const [director, setDirector] = useState('');
   const [year, setYear] = useState<number>(new Date().getFullYear());
   const [duration, setDuration] = useState('');
+  const [durationHours, setDurationHours] = useState<number>(0);
+  const [durationMinutes, setDurationMinutes] = useState<number>(0);
   const [genre, setGenre] = useState<string[]>([]);
   const [thumbnail, setThumbnail] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
@@ -132,6 +134,8 @@ const Admin = () => {
     setDirector('');
     setYear(new Date().getFullYear());
     setDuration('');
+    setDurationHours(0);
+    setDurationMinutes(0);
     setGenre([]);
     setThumbnail('');
     setVideoUrl('');
@@ -146,6 +150,17 @@ const Admin = () => {
     setDirector(movie.director);
     setYear(movie.year);
     setDuration(movie.duration);
+    // Parse duration in HH:MM:SS or minutes text
+    const match = /^(\d{1,2}):(\d{2})$/.exec(movie.duration);
+    if (match) {
+      setDurationHours(parseInt(match[1]));
+      setDurationMinutes(parseInt(match[2]));
+    } else {
+      const minMatch = /(\d+)\s*min/.exec(movie.duration);
+      const total = minMatch ? parseInt(minMatch[1]) * 60 : 0;
+      setDurationHours(Math.floor(total / 3600));
+      setDurationMinutes(Math.floor((total % 3600) / 60));
+    }
     setGenre(Array.isArray(movie.genre) ? movie.genre : [movie.genre]);
     setThumbnail(movie.thumbnail || '');
     setVideoUrl(movie.video_url || '');
@@ -159,11 +174,13 @@ const Admin = () => {
     if (!user) return;
 
     // Validate input first
+    const composedDuration = `${String(durationHours).padStart(2, '0')}:${String(durationMinutes).padStart(2, '0')}`;
+    setDuration(composedDuration);
     const validation = movieSchema.safeParse({
       title,
       director,
       year,
-      duration,
+      duration: composedDuration,
       genre,
       synopsis,
       thumbnail,
@@ -415,19 +432,36 @@ const Admin = () => {
                       </div>
                       
                       <div className="space-y-2">
-                        <Label htmlFor="duration">Duração *</Label>
-                        <Select value={duration} onValueChange={setDuration}>
-                          <SelectTrigger className="bg-input border-border">
-                            <SelectValue placeholder="Selecione a duração" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-popover border-border">
-                            {DURATION_OPTIONS.map((durationOption) => (
-                              <SelectItem key={durationOption.value} value={durationOption.value}>
-                                {durationOption.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <Label>Duração *</Label>
+                        <div className="grid grid-cols-2 gap-2 items-end">
+                          <div>
+                            <Label htmlFor="duration-hours" className="sr-only">Horas</Label>
+                            <Select value={String(durationHours)} onValueChange={(v) => setDurationHours(parseInt(v))}>
+                              <SelectTrigger id="duration-hours" className="bg-input border-border w-full h-10">
+                                <SelectValue placeholder="Horas (HH)" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-popover border-border max-h-60">
+                                {Array.from({ length: 24 }, (_, i) => i).map((h) => (
+                                  <SelectItem key={h} value={String(h)}>{String(h).padStart(2, '0')}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label htmlFor="duration-minutes" className="sr-only">Minutos</Label>
+                            <Select value={String(durationMinutes)} onValueChange={(v) => setDurationMinutes(parseInt(v))}>
+                              <SelectTrigger id="duration-minutes" className="bg-input border-border w-full h-10">
+                                <SelectValue placeholder="Minutos (MM)" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-popover border-border max-h-60">
+                                {Array.from({ length: 60 }, (_, i) => i).map((m) => (
+                                  <SelectItem key={m} value={String(m)}>{String(m).padStart(2, '0')}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">Horas / Minutos</p>
                       </div>
                       
                       <div className="space-y-2">
@@ -481,7 +515,7 @@ const Admin = () => {
                       <Label htmlFor="thumbnail">URL da Imagem</Label>
                       <Input
                         id="thumbnail"
-                        placeholder="https://example.com/image.jpg"
+                        placeholder="https://exemplo.com/image.jpg"
                         value={thumbnail}
                         onChange={(e) => setThumbnail(e.target.value)}
                         className="bg-input border-border"
@@ -489,13 +523,14 @@ const Admin = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="videoUrl">URL do Vídeo</Label>
+                      <Label htmlFor="videoUrl">URL do Vídeo *</Label>
                       <Input
                         id="videoUrl"
-                        placeholder="https://example.com/video.mp4"
+                        placeholder="https://exemplo.com/video.mp4"
                         value={videoUrl}
                         onChange={(e) => setVideoUrl(e.target.value)}
                         className="bg-input border-border"
+                        required
                       />
                     </div>
 

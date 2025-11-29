@@ -26,11 +26,35 @@ const Profile = () => {
 
   useEffect(() => {
     if (user) {
-      setFirstName(user.user_metadata?.firstName || '');
-      setLastName(user.user_metadata?.lastName || '');
+      const metaFirst = user.user_metadata?.firstName || '';
+      const metaLast = user.user_metadata?.lastName || '';
+      setFirstName(metaFirst);
+      setLastName(metaLast);
       setEmail(user.email || '');
       setBio(user.user_metadata?.bio || '');
       setAvatarUrl(user.user_metadata?.avatarUrl || '');
+
+      // Fallback: buscar do perfil persistido caso metadados estejam vazios
+      if (!metaFirst || !metaLast) {
+        (async () => {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('first_name, last_name')
+            .eq('user_id', user.id)
+            .single();
+          if (!error && data) {
+            if (!metaFirst) setFirstName(data.first_name || '');
+            if (!metaLast) setLastName(data.last_name || '');
+            // Sincroniza metadados para futuras leituras
+            await supabase.auth.updateUser({
+              data: {
+                firstName: data.first_name || metaFirst,
+                lastName: data.last_name || metaLast,
+              }
+            });
+          }
+        })();
+      }
     }
   }, [user]);
 

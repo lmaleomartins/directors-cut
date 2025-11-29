@@ -31,6 +31,28 @@ const MovieDetail = () => {
   const [movie, setMovie] = useState<Movie | null>(null);
   const [loading, setLoading] = useState(true);
   const [showPlayer, setShowPlayer] = useState(false);
+  const formatDuration = (dur: string) => {
+    const match = /^(\d{1,2}):(\d{2})$/.exec(dur);
+    if (match) {
+      const h = parseInt(match[1], 10);
+      const m = parseInt(match[2], 10);
+      const parts = [] as string[];
+      if (h > 0) parts.push(`${h}h`);
+      parts.push(`${m}m`);
+      return parts.join(' ');
+    }
+    const minMatch = /(\d+)\s*min/.exec(dur);
+    if (minMatch) {
+      const totalMin = parseInt(minMatch[1], 10);
+      const h = Math.floor(totalMin / 60);
+      const m = totalMin % 60;
+      const parts = [] as string[];
+      if (h > 0) parts.push(`${h}h`);
+      parts.push(`${m}m`);
+      return parts.join(' ');
+    }
+    return dur;
+  };
 
   useEffect(() => {
     if (id) {
@@ -276,7 +298,7 @@ const MovieDetail = () => {
                   </div>
                   <div className="flex items-center">
                     <Clock className="w-4 h-4 mr-2" />
-                    {movie.duration}
+                    {formatDuration(movie.duration)}
                   </div>
                   <div className="flex items-center">
                     <Eye className="w-4 h-4 mr-2" />
@@ -323,7 +345,7 @@ const MovieDetail = () => {
                   </div>
                   <div>
                     <span className="text-muted-foreground">Duração:</span>
-                    <p className="text-foreground font-medium">{movie.duration}</p>
+                    <p className="text-foreground font-medium">{formatDuration(movie.duration)}</p>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Gênero:</span>
