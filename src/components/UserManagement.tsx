@@ -114,7 +114,9 @@ export const UserManagement = () => {
 
   const deleteUser = async (userId: string) => {
     try {
-      const { error } = await supabase.auth.admin.deleteUser(userId);
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { userId }
+      });
       
       if (error) {
         toast({
@@ -129,8 +131,13 @@ export const UserManagement = () => {
         });
         fetchUsers();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting user:', error);
+      toast({
+        title: 'Erro',
+        description: mapToUserError(error),
+        variant: 'destructive'
+      });
     }
   };
 

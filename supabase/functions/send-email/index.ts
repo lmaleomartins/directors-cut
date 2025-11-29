@@ -1,7 +1,5 @@
-import React from 'https://esm.sh/react@18.3.1'
 import { Webhook } from 'https://esm.sh/standardwebhooks@1.0.0'
 import { Resend } from 'https://esm.sh/resend@4.0.0'
-import { renderToStaticMarkup } from 'https://esm.sh/react-dom@18.3.1/server'
 import { ConfirmationEmail } from './_templates/confirmation-email.tsx'
 import { PasswordResetEmail } from './_templates/password-reset-email.tsx'
 
@@ -107,26 +105,22 @@ Deno.serve(async (req) => {
 
     // Determinar o tipo de email e usar o template apropriado
     if (email_data.email_action_type === 'recovery') {
-      // Email de redefinição de senha
-      const resetUrl = `${Deno.env.get('SUPABASE_URL')}/auth/v1/verify?token=${email_data.token_hash}&type=${email_data.email_action_type}&redirect_to=${encodeURIComponent('https://bnetnodeuexpbfsyzuzy.supabase.co/auth/reset-password')}`
+      // Email de redefinição de senha - use the dynamic redirect_to parameter
+      const resetUrl = `${Deno.env.get('SUPABASE_URL')}/auth/v1/verify?token=${email_data.token_hash}&type=${email_data.email_action_type}&redirect_to=${encodeURIComponent(email_data.redirect_to)}`
       
-      html = renderToStaticMarkup(
-        React.createElement(PasswordResetEmail, {
-          resetUrl,
-          token: email_data.token
-        })
-      )
+      html = PasswordResetEmail({
+        resetUrl,
+        token: email_data.token
+      })
       subject = 'Redefinir sua senha - Director\'s Cut'
     } else {
       // Email de confirmação
       const confirmUrl = `${Deno.env.get('SUPABASE_URL')}/auth/v1/verify?token=${email_data.token_hash}&type=${email_data.email_action_type}&redirect_to=${email_data.redirect_to}`
       
-      html = renderToStaticMarkup(
-        React.createElement(ConfirmationEmail, {
-          confirmUrl,
-          token: email_data.token
-        })
-      )
+      html = ConfirmationEmail({
+        confirmUrl,
+        token: email_data.token
+      })
       subject = 'Confirme sua conta - Director\'s Cut'
     }
 

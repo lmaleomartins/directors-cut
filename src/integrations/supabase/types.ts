@@ -132,18 +132,9 @@ export type Database = {
         }
         Returns: boolean
       }
-      increment_movie_views: {
-        Args: { movie_id: string }
-        Returns: undefined
-      }
-      is_admin_or_master: {
-        Args: { _user_id: string }
-        Returns: boolean
-      }
-      set_master_user: {
-        Args: { _email: string }
-        Returns: string
-      }
+      increment_movie_views: { Args: { movie_id: string }; Returns: undefined }
+      is_admin_or_master: { Args: { _user_id: string }; Returns: boolean }
+      set_master_user: { Args: { _email: string }; Returns: string }
     }
     Enums: {
       user_role: "master" | "admin" | "user"
