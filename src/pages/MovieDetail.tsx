@@ -15,6 +15,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { movieSchema } from '@/lib/validationSchemas';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 
 interface Movie {
   id: string;
@@ -47,6 +49,26 @@ const MovieDetail = () => {
   const [editThumbnail, setEditThumbnail] = useState('');
   const [editVideoUrl, setEditVideoUrl] = useState('');
   const [editSynopsis, setEditSynopsis] = useState('');
+  const [editYear, setEditYear] = useState<number>(new Date().getFullYear());
+  const [editGenre, setEditGenre] = useState<string[]>([]);
+  const [editFeatured, setEditFeatured] = useState(false);
+  const [featuredCount, setFeaturedCount] = useState<number>(0);
+  const [durationHours, setDurationHours] = useState<number>(0);
+  const [durationMinutes, setDurationMinutes] = useState<number>(0);
+  const CURRENT_YEAR = new Date().getFullYear();
+  const YEAR_OPTIONS = Array.from({ length: CURRENT_YEAR - 1895 + 1 }, (_, i) => CURRENT_YEAR - i);
+  const GENRE_OPTIONS = [
+    "Ação", "Adulto", "Análise", "Animação", "Antologia", "Arthouse",
+    "Aventura", "Biografia", "Comédia", "Crime", "Cult", "Cyberpunk",
+    "Debate", "Distopia", "Documentário", "Drama", "Educativo", "Entrevista",
+    "Esporte", "Experimental", "Família", "Fantasia", "Ficção Científica",
+    "Film-Noir", "Found Footage", "Game Show", "Gameplay", "Guerra",
+    "História", "Horror", "Independente", "Infantil", "LGBTQ+", "Mesa Redonda",
+    "Minissérie", "Mistério", "Mockumentário", "Musical", "Noir", "Notícias",
+    "Palestra", "Podcast", "Reality Show", "Resenha", "Romance", "Stand-up",
+    "Steampunk", "Supernatural", "Talk Show", "Teen", "Thriller", "Tutorial",
+    "Utopia", "Vlog", "Web Series", "Western"
+  ];
   const formatDuration = (dur: string) => {
     const match = /^(\d{1,2}):(\d{2})$/.exec(dur);
     if (match) {
@@ -104,6 +126,30 @@ const MovieDetail = () => {
       setEditThumbnail(data.thumbnail || '');
       setEditVideoUrl(data.video_url || '');
       setEditSynopsis(data.synopsis || '');
+      setEditYear(data.year);
+      setEditGenre(String(data.genre).split(',').map(g => g.trim()).filter(Boolean));
+      setEditFeatured(!!data.featured);
+      // fetch current featured count excluding this movie
+      try {
+        const { count } = await supabase
+          .from('movies')
+          .select('id', { count: 'exact', head: true })
+          .eq('featured', true)
+          .neq('id', data.id);
+        setFeaturedCount(count || 0);
+      } catch {
+        setFeaturedCount(0);
+      }
+      const m = /^(\d{1,2}):(\d{2})$/.exec(data.duration || '');
+      if (m) {
+        setDurationHours(parseInt(m[1]));
+        setDurationMinutes(parseInt(m[2]));
+      } else {
+        const minMatch = /(\d+)\s*min/.exec(data.duration || '');
+        const total = minMatch ? parseInt(minMatch[1]) : 0;
+        setDurationHours(Math.floor(total / 60));
+        setDurationMinutes(total % 60);
+      }
 
       // Buscar nome do usuário que inseriu o filme
       if (data?.created_by) {
@@ -154,12 +200,13 @@ const MovieDetail = () => {
     e.preventDefault();
     if (!movie) return;
 
+    const composedDuration = `${String(durationHours).padStart(2, '0')}:${String(durationMinutes).padStart(2, '0')}`;
     const validation = movieSchema.safeParse({
       title: editTitle,
       director: editDirector,
-      year: movie.year,
-      duration: editDuration,
-      genre: (Array.isArray(movie.genre) ? movie.genre : String(movie.genre).split(',').map(g => g.trim())).filter(Boolean),
+      year: editYear,
+      duration: composedDuration,
+      genre: editGenre,
       synopsis: editSynopsis || undefined,
       thumbnail: editThumbnail || '',
       video_url: editVideoUrl
@@ -175,10 +222,11 @@ const MovieDetail = () => {
         director: validation.data.director,
         year: validation.data.year,
         duration: validation.data.duration,
-        genre: Array.isArray(validation.data.genre) ? validation.data.genre.join(', ') : validation.data.genre,
+        genre: validation.data.genre.join(', '),
         thumbnail: validation.data.thumbnail || null,
         video_url: validation.data.video_url || null,
         synopsis: validation.data.synopsis || null,
+        featured: canManageAllMovies() ? editFeatured : (movie?.featured || false),
       };
 
       const { error } = await supabase
@@ -384,13 +432,96 @@ const MovieDetail = () => {
                           </div>
                           <div className="grid grid-cols-3 gap-4">
                             <div className="space-y-2">
-                              <Label htmlFor="edit-duration">Duração (HH:MM) *</Label>
-                              <Input id="edit-duration" value={editDuration} onChange={(e) => setEditDuration(e.target.value)} placeholder="Ex.: 01:35" required />
+                              <Label htmlFor="edit-year">Ano *</Label>
+                              <Select value={String(editYear)} onValueChange={(v) => setEditYear(parseInt(v))}>
+                                <SelectTrigger id="edit-year" className="bg-input border-border">
+                                  <SelectValue placeholder="Selecione o ano" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-popover border-border max-h-60">
+                                  {YEAR_OPTIONS.map((y) => (
+                                    <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                             </div>
-                            <div className="space-y-2 col-span-2">
-                              <Label htmlFor="edit-thumbnail">URL da Imagem</Label>
-                              <Input id="edit-thumbnail" value={editThumbnail} onChange={(e) => setEditThumbnail(e.target.value)} placeholder="https://exemplo.com/image.jpg" />
+                            <div className="space-y-2">
+                              <Label>Duração *</Label>
+                              <div className="grid grid-cols-2 gap-2 items-end">
+                                <div>
+                                  <Label htmlFor="edit-duration-hours" className="sr-only">Horas</Label>
+                                  <Select value={String(durationHours)} onValueChange={(v) => setDurationHours(parseInt(v))}>
+                                    <SelectTrigger id="edit-duration-hours" className="bg-input border-border w-full h-10 justify-center text-center">
+                                      <SelectValue placeholder="Horas (HH)" />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-popover border-border max-h-60 text-center">
+                                      {Array.from({ length: 24 }, (_, i) => i).map((h) => (
+                                        <SelectItem key={h} value={String(h)} className="text-center">{String(h).padStart(2, '0')}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div>
+                                  <Label htmlFor="edit-duration-minutes" className="sr-only">Minutos</Label>
+                                  <Select value={String(durationMinutes)} onValueChange={(v) => setDurationMinutes(parseInt(v))}>
+                                    <SelectTrigger id="edit-duration-minutes" className="bg-input border-border w-full h-10 justify-center text-center">
+                                      <SelectValue placeholder="Minutos (MM)" />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-popover border-border max-h-60 text-center">
+                                      {Array.from({ length: 60 }, (_, i) => i).map((m) => (
+                                        <SelectItem key={m} value={String(m)} className="text-center">{String(m).padStart(2, '0')}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-2 gap-2 mt-1">
+                                <span className="text-xs text-muted-foreground text-center">Horas</span>
+                                <span className="text-xs text-muted-foreground text-center">Minutos</span>
+                              </div>
                             </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="edit-genre">Gênero(s) *</Label>
+                              <Select onValueChange={(value) => {
+                                if (value === "Adulto" && editGenre.includes("Infantil")) {
+                                  setEditGenre(editGenre.filter(g => g !== "Infantil").concat(value));
+                                  return;
+                                }
+                                if (value === "Infantil" && editGenre.includes("Adulto")) {
+                                  setEditGenre(editGenre.filter(g => g !== "Adulto").concat(value));
+                                  return;
+                                }
+                                if (!editGenre.includes(value)) {
+                                  setEditGenre([...editGenre, value]);
+                                }
+                              }}>
+                                <SelectTrigger className="bg-input border-border">
+                                  <SelectValue placeholder="Adicione gêneros" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-popover border-border max-h-60">
+                                  {GENRE_OPTIONS.filter(option => !editGenre.includes(option)).map((genreOption) => (
+                                    <SelectItem key={genreOption} value={genreOption}>{genreOption}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              {editGenre.length > 0 && (
+                                <div className="flex flex-wrap gap-2">
+                                  {editGenre.map((selectedGenre) => (
+                                    <Badge
+                                      key={selectedGenre}
+                                      variant="secondary"
+                                      className="cursor-pointer hover:bg-destructive hover:text-destructive-foreground"
+                                      onClick={() => setEditGenre(editGenre.filter(g => g !== selectedGenre))}
+                                    >
+                                      {selectedGenre} ×
+                                    </Badge>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="edit-thumbnail">URL da Imagem</Label>
+                            <Input id="edit-thumbnail" value={editThumbnail} onChange={(e) => setEditThumbnail(e.target.value)} placeholder="https://exemplo.com/image.jpg" />
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="edit-video">URL do Vídeo *</Label>
@@ -400,6 +531,15 @@ const MovieDetail = () => {
                             <Label htmlFor="edit-synopsis">Sinopse</Label>
                             <Textarea id="edit-synopsis" value={editSynopsis} onChange={(e) => setEditSynopsis(e.target.value)} placeholder="Descrição do filme..." />
                           </div>
+                          {canManageAllMovies() && (
+                            <div className="flex items-center space-x-2">
+                              <Switch id="edit-featured" checked={editFeatured} onCheckedChange={setEditFeatured} />
+                              <div className="flex flex-col">
+                                <Label htmlFor="edit-featured" className="text-sm">Filme em destaque</Label>
+                                <span className="text-xs text-muted-foreground">{featuredCount}/3 filmes em destaque</span>
+                              </div>
+                            </div>
+                          )}
                           <div className="flex justify-end gap-2 pt-2">
                             <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>Cancelar</Button>
                             <Button type="submit" className="bg-primary hover:bg-primary/90">Salvar</Button>
