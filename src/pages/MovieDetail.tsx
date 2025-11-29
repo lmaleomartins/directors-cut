@@ -8,6 +8,13 @@ import { toast } from 'sonner';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import VideoEmbedWithFallback from '@/components/VideoEmbedWithFallback';
+import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { movieSchema } from '@/lib/validationSchemas';
 
 interface Movie {
   id: string;
@@ -31,6 +38,15 @@ const MovieDetail = () => {
   const [movie, setMovie] = useState<Movie | null>(null);
   const [loading, setLoading] = useState(true);
   const [showPlayer, setShowPlayer] = useState(false);
+  const { user } = useAuth();
+  const { canManageAllMovies } = useUserRole();
+  const [editOpen, setEditOpen] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDirector, setEditDirector] = useState('');
+  const [editDuration, setEditDuration] = useState('');
+  const [editThumbnail, setEditThumbnail] = useState('');
+  const [editVideoUrl, setEditVideoUrl] = useState('');
+  const [editSynopsis, setEditSynopsis] = useState('');
   const formatDuration = (dur: string) => {
     const match = /^(\d{1,2}):(\d{2})$/.exec(dur);
     if (match) {
@@ -81,6 +97,13 @@ const MovieDetail = () => {
       }
 
       setMovie(data);
+      // prepare edit fields
+      setEditTitle(data.title || '');
+      setEditDirector(data.director || '');
+      setEditDuration(data.duration || '');
+      setEditThumbnail(data.thumbnail || '');
+      setEditVideoUrl(data.video_url || '');
+      setEditSynopsis(data.synopsis || '');
 
       // Buscar nome do usuário que inseriu o filme
       if (data?.created_by) {
@@ -119,6 +142,55 @@ const MovieDetail = () => {
     } catch (error) {
       // Silently fail - views increment is not critical
       console.error('Failed to increment views:', error);
+    }
+  };
+
+  const canEditHere = () => {
+    if (!movie) return false;
+    return canManageAllMovies() || (user && movie.created_by === user.id);
+  };
+
+  const handleInlineUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!movie) return;
+
+    const validation = movieSchema.safeParse({
+      title: editTitle,
+      director: editDirector,
+      year: movie.year,
+      duration: editDuration,
+      genre: (Array.isArray(movie.genre) ? movie.genre : String(movie.genre).split(',').map(g => g.trim())).filter(Boolean),
+      synopsis: editSynopsis || undefined,
+      thumbnail: editThumbnail || '',
+      video_url: editVideoUrl
+    });
+    if (!validation.success) {
+      toast.error(validation.error.issues[0].message);
+      return;
+    }
+
+    try {
+      const updateData = {
+        title: validation.data.title,
+        director: validation.data.director,
+        year: validation.data.year,
+        duration: validation.data.duration,
+        genre: Array.isArray(validation.data.genre) ? validation.data.genre.join(', ') : validation.data.genre,
+        thumbnail: validation.data.thumbnail || null,
+        video_url: validation.data.video_url || null,
+        synopsis: validation.data.synopsis || null,
+      };
+
+      const { error } = await supabase
+        .from('movies')
+        .update(updateData)
+        .eq('id', movie.id);
+      if (error) throw error;
+      toast.success('Filme atualizado com sucesso!');
+      setEditOpen(false);
+      await fetchMovie();
+    } catch (err: any) {
+      toast.error('Erro ao atualizar filme');
     }
   };
 
@@ -288,6 +360,53 @@ const MovieDetail = () => {
                     <Badge className="bg-primary text-primary-foreground">
                       Em Destaque
                     </Badge>
+                  )}
+                  {canEditHere() && (
+                    <Dialog open={editOpen} onOpenChange={setEditOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" className="ml-4 border-border">Editar</Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-2xl bg-card">
+                        <DialogHeader>
+                          <DialogTitle className="text-foreground">Editar Filme</DialogTitle>
+                          <DialogDescription className="text-muted-foreground">Atualize os campos abaixo e salve.</DialogDescription>
+                        </DialogHeader>
+                        <form onSubmit={handleInlineUpdate} className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="edit-title">Título *</Label>
+                              <Input id="edit-title" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} required />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="edit-director">Diretor *</Label>
+                              <Input id="edit-director" value={editDirector} onChange={(e) => setEditDirector(e.target.value)} required />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-3 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="edit-duration">Duração (HH:MM) *</Label>
+                              <Input id="edit-duration" value={editDuration} onChange={(e) => setEditDuration(e.target.value)} placeholder="Ex.: 01:35" required />
+                            </div>
+                            <div className="space-y-2 col-span-2">
+                              <Label htmlFor="edit-thumbnail">URL da Imagem</Label>
+                              <Input id="edit-thumbnail" value={editThumbnail} onChange={(e) => setEditThumbnail(e.target.value)} placeholder="https://exemplo.com/image.jpg" />
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="edit-video">URL do Vídeo *</Label>
+                            <Input id="edit-video" value={editVideoUrl} onChange={(e) => setEditVideoUrl(e.target.value)} placeholder="https://exemplo.com/video.mp4" required />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="edit-synopsis">Sinopse</Label>
+                            <Textarea id="edit-synopsis" value={editSynopsis} onChange={(e) => setEditSynopsis(e.target.value)} placeholder="Descrição do filme..." />
+                          </div>
+                          <div className="flex justify-end gap-2 pt-2">
+                            <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>Cancelar</Button>
+                            <Button type="submit" className="bg-primary hover:bg-primary/90">Salvar</Button>
+                          </div>
+                        </form>
+                      </DialogContent>
+                    </Dialog>
                   )}
                 </div>
 
