@@ -280,8 +280,8 @@ const VideoGrid = () => {
           </div>
           <div className="relative">
             <Select value={filterYear} onValueChange={(value) => { setFilterYear(value); setPage(1); }}>
-              <SelectTrigger className="w-[120px] bg-background border-border transition-all duration-200 hover:shadow-[0_0_12px_2px_rgba(220,38,38,0.4)]">
-                <SelectValue placeholder="Ano" />
+              <SelectTrigger className="w-[140px] inline-flex items-center justify-between h-10 px-4 rounded-md border border-input bg-background text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                <SelectValue placeholder="Filtrar ano" />
               </SelectTrigger>
               <SelectContent className="bg-popover border-border max-h-60">
                 {yearOptions.map(y => (
