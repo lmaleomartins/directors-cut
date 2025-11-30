@@ -17,7 +17,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Separator } from "@/components/ui/separator";
+// Removed Separator as navigation links are currently unused
 
 const Header = () => {
   const { user, signOut } = useAuth();
@@ -40,18 +40,7 @@ const Header = () => {
           </h1>
         </div>
         <div className="flex items-center space-x-4">
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
-            <a href="#catalog" className="text-foreground hover:text-primary transition-colors">
-              Catálogo
-            </a>
-            <a href="#about" className="text-foreground hover:text-primary transition-colors">
-              Sobre
-            </a>
-            <a href="#contact" className="text-foreground hover:text-primary transition-colors">
-              Contato
-            </a>
-          </nav>
+          {/* Desktop Navigation removed (links not in use) */}
 
           <ThemeToggle />
 
@@ -112,31 +101,6 @@ const Header = () => {
               </SheetHeader>
               
               <div className="mt-6 space-y-4">
-                {/* Navigation Links */}
-                <div className="space-y-2">
-                  <h3 className="text-sm font-medium text-muted-foreground mb-3">Navegação</h3>
-                  <a 
-                    href="#catalog" 
-                    className="block px-3 py-2 text-foreground hover:text-primary hover:bg-accent rounded-md transition-colors"
-                  >
-                    Catálogo
-                  </a>
-                  <a 
-                    href="#about" 
-                    className="block px-3 py-2 text-foreground hover:text-primary hover:bg-accent rounded-md transition-colors"
-                  >
-                    Sobre
-                  </a>
-                  <a 
-                    href="#contact" 
-                    className="block px-3 py-2 text-foreground hover:text-primary hover:bg-accent rounded-md transition-colors"
-                  >
-                    Contato
-                  </a>
-                </div>
-
-                <Separator className="bg-border" />
-
                 {/* Auth Section */}
                 <div className="space-y-2">
                   <h3 className="text-sm font-medium text-muted-foreground mb-3">Conta</h3>
