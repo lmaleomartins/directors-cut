@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Film, Plus, Edit, Trash2, LogOut, Eye, Users } from 'lucide-react';
+import { Film, Plus, Edit, Trash2, LogOut, Eye, Users, Tag, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { UserManagement } from '@/components/UserManagement';
 import { movieSchema } from '@/lib/validationSchemas';
@@ -67,10 +67,14 @@ const Admin = () => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingMovie, setEditingMovie] = useState<Movie | null>(null);
+  const [movieSearch, setMovieSearch] = useState('');
   // Genres
   const [genres, setGenres] = useState<Genre[]>([]);
   const [newGenreName, setNewGenreName] = useState('');
   const [updatingGenre, setUpdatingGenre] = useState(false);
+  const [genreSearch, setGenreSearch] = useState('');
+  const [editingGenreId, setEditingGenreId] = useState<string | null>(null);
+  const [editingGenreName, setEditingGenreName] = useState('');
 
   // Controle de requisições (single-flight + throttling)
   const moviesInFlightRef = useRef(false);
@@ -208,6 +212,46 @@ const Admin = () => {
       await fetchGenres();
     } catch (error: unknown) {
       toast.error(mapToUserError(error));
+    } finally {
+      setUpdatingGenre(false);
+    }
+  };
+
+  const startEditGenre = (g: Genre) => {
+    setEditingGenreId(g.id);
+    setEditingGenreName(g.name);
+  };
+
+  const cancelEditGenre = () => {
+    setEditingGenreId(null);
+    setEditingGenreName('');
+  };
+
+  const saveEditGenre = async () => {
+    if (!editingGenreId) return;
+    const newNameRaw = editingGenreName.trim();
+    if (!newNameRaw) {
+      toast.error('Nome não pode ser vazio.');
+      return;
+    }
+    const normalized = normalizeGenreName(newNameRaw);
+    if (genres.some(g => g.id !== editingGenreId && g.name.toLocaleLowerCase('pt-BR') === normalized.toLocaleLowerCase('pt-BR'))) {
+      toast.error('Já existe outro gênero com esse nome.');
+      return;
+    }
+    try {
+      setUpdatingGenre(true);
+      const { error } = await (supabase as unknown as { from: (relation: string) => { update: (vals: unknown) => { eq: (col: string, v: unknown) => Promise<{ error: unknown }> } } })
+        .from('genres')
+        .update({ name: normalized })
+        .eq('id', editingGenreId);
+      if (error) throw error;
+      toast.success('Gênero atualizado.');
+      setEditingGenreId(null);
+      setEditingGenreName('');
+      await fetchGenres();
+    } catch (err: unknown) {
+      toast.error(mapToUserError(err));
     } finally {
       setUpdatingGenre(false);
     }
@@ -401,7 +445,7 @@ const Admin = () => {
           <div className="flex items-center space-x-3">
             <Film className="w-8 h-8 text-primary" />
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Admin Panel</h1>
+              <h1 className="text-2xl font-bold text-foreground">Painel Admin</h1>
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-sm text-muted-foreground">Perfil:</p>
                   <span className="font-semibold text-foreground">
@@ -438,11 +482,17 @@ const Admin = () => {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="movies" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="flex w-full flex-wrap gap-2">
             <TabsTrigger value="movies">
               <Film className="w-4 h-4 mr-2" />
               Filmes
             </TabsTrigger>
+            {userRole === 'master' && (
+              <TabsTrigger value="genres">
+                <Tag className="w-4 h-4 mr-2" />
+                Gêneros
+              </TabsTrigger>
+            )}
             {canManageUsers() && (
               <TabsTrigger value="users">
                 <Users className="w-4 h-4 mr-2" />
@@ -452,28 +502,28 @@ const Admin = () => {
           </TabsList>
 
           <TabsContent value="movies" className="space-y-6">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 className="text-3xl font-bold text-foreground">
-                  {canManageAllMovies() ? 'Catálogo de Filmes' : 'Meus Filmes'}
-                </h2>
-                <p className="text-muted-foreground mt-1">
-                  {movies.length} filme{movies.length !== 1 ? 's' : ''} 
-                  {canManageAllMovies() ? ' no catálogo' : ' criado(s) por você'}
-                </p>
-              </div>
-              
-              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button 
-                    id="add-movie-button"
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto"
-                    onClick={resetForm}
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Adicionar Filme
-                  </Button>
-                </DialogTrigger>
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-3xl font-bold text-foreground">
+                    {canManageAllMovies() ? 'Catálogo de Filmes' : 'Meus Filmes'}
+                  </h2>
+                  <p className="text-muted-foreground mt-1">
+                    {movies.length} filme{movies.length !== 1 ? 's' : ''} 
+                    {canManageAllMovies() ? ' no catálogo' : ' criado(s) por você'}
+                  </p>
+                </div>
+                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      id="add-movie-button"
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto"
+                      onClick={resetForm}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Adicionar Filme
+                    </Button>
+                  </DialogTrigger>
                 
                 <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-2xl max-h-[90vh] overflow-y-auto bg-card">
                   <DialogHeader>
@@ -685,53 +735,47 @@ const Admin = () => {
                   </form>
                 </DialogContent>
               </Dialog>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="relative w-full sm:w-96">
+                  <Input
+                    placeholder="Buscar por título, diretor, ano ou gênero"
+                    value={movieSearch}
+                    onChange={(e) => setMovieSearch(e.target.value)}
+                    className="bg-input border-border pr-10"
+                  />
+                  {movieSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setMovieSearch('')}
+                      aria-label="Limpar busca"
+                      className="absolute top-1/2 -translate-y-1/2 right-2 h-6 w-6 flex items-center justify-center rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
 
-            {userRole === 'master' && (
-              <Card className="bg-card border-border">
-                <CardHeader>
-                  <CardTitle className="text-foreground">Gerenciar Gêneros</CardTitle>
-                  <CardDescription className="text-muted-foreground">Adicionar e remover gêneros disponíveis no catálogo.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Input
-                      id="new-genre"
-                      placeholder="Novo gênero (ex.: Biografia)"
-                      value={newGenreName}
-                      onChange={(e) => setNewGenreName(e.target.value)}
-                      className="bg-input border-border w-full sm:w-auto"
-                    />
-                    <Button onClick={addGenre} disabled={updatingGenre} className="bg-primary hover:bg-primary/90 w-full sm:w-auto">
-                      Adicionar
-                    </Button>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {genres.length === 0 ? (
-                      <span className="text-sm text-muted-foreground">Nenhum gênero cadastrado.</span>
-                    ) : (
-                      genres.map((g) => (
-                        <div key={g.id} className="flex items-center gap-2 border border-border rounded px-2 py-1">
-                          <span className="text-sm text-foreground">{g.name}</span>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => deleteGenre(g.id)}
-                            disabled={updatingGenre}
-                            className="border-border text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+            {/* Painel de gêneros movido para tab própria */}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {movies.map((movie) => (
+            {(() => {
+              const term = movieSearch.trim().toLocaleLowerCase('pt-BR');
+              const filtered = term
+                ? movies.filter(m => {
+                    const genresText = Array.isArray(m.genre) ? m.genre.join(', ') : m.genre;
+                    return (
+                      m.title.toLocaleLowerCase('pt-BR').includes(term) ||
+                      m.director.toLocaleLowerCase('pt-BR').includes(term) ||
+                      String(m.year).includes(term) ||
+                      genresText.toLocaleLowerCase('pt-BR').includes(term)
+                    );
+                  })
+                : movies;
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filtered.map((movie) => (
                 <Card key={movie.id} className="bg-gradient-card border-border hover:shadow-glow transition-all duration-300">
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
@@ -780,10 +824,21 @@ const Admin = () => {
                     )}
                   </CardContent>
                 </Card>
-              ))}
-            </div>
+                  ))}
+                </div>
+              );
+            })()}
 
-            {movies.length === 0 && (
+            {movies.length === 0 || (movieSearch.trim() && movies.filter(m => {
+              const term = movieSearch.trim().toLocaleLowerCase('pt-BR');
+              const genresText = Array.isArray(m.genre) ? m.genre.join(', ') : m.genre;
+              return (
+                m.title.toLocaleLowerCase('pt-BR').includes(term) ||
+                m.director.toLocaleLowerCase('pt-BR').includes(term) ||
+                String(m.year).includes(term) ||
+                genresText.toLocaleLowerCase('pt-BR').includes(term)
+              );
+            }).length === 0) ? (
               <div className="text-center py-12">
                 <Film className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-xl font-semibold text-foreground mb-2">
@@ -795,12 +850,152 @@ const Admin = () => {
                     : 'Você ainda não criou nenhum filme.'}
                 </p>
               </div>
-            )}
+            ) : null}
           </TabsContent>
 
           {canManageUsers() && (
             <TabsContent value="users" className="space-y-6">
               <UserManagement />
+            </TabsContent>
+          )}
+          {userRole === 'master' && (
+            <TabsContent value="genres" className="space-y-6">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-3xl font-bold text-foreground flex items-center gap-2"><Tag className="w-6 h-6" /> Gerenciar Gêneros</h2>
+                  <p className="text-muted-foreground mt-1">Adicionar, remover e organizar gêneros do catálogo.</p>
+                </div>
+              </div>
+              <Card className="bg-card border-border">
+                <CardHeader>
+                  <CardTitle className="text-foreground">Novo Gênero</CardTitle>
+                  <CardDescription className="text-muted-foreground">Crie um gênero padronizando nome em Title Case.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (!updatingGenre && newGenreName.trim()) addGenre();
+                    }}
+                    className="flex flex-col sm:flex-row gap-2"
+                  >
+                    <Input
+                      id="new-genre"
+                      placeholder="Ex.: Documentário"
+                      value={newGenreName}
+                      onChange={(e) => setNewGenreName(e.target.value)}
+                      className="bg-input border-border w-full sm:w-auto"
+                    />
+                    <Button type="submit" disabled={updatingGenre || !newGenreName.trim()} className="bg-primary hover:bg-primary/90 w-full sm:w-auto">
+                      {updatingGenre ? 'Processando...' : 'Adicionar'}
+                    </Button>
+                  </form>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <div className="relative w-full sm:w-80">
+                      <Input
+                        id="search-genre"
+                        placeholder="Buscar gênero"
+                        value={genreSearch}
+                        onChange={(e) => setGenreSearch(e.target.value)}
+                        className="bg-input border-border pr-10"
+                      />
+                      {genreSearch && (
+                        <button
+                          type="button"
+                          onClick={() => setGenreSearch('')}
+                          aria-label="Limpar busca de gênero"
+                          className="absolute top-1/2 -translate-y-1/2 right-2 h-6 w-6 flex items-center justify-center rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="bg-card border-border">
+                <CardHeader>
+                  <CardTitle className="text-foreground">Gêneros Cadastrados ({genres.length})</CardTitle>
+                  <CardDescription className="text-muted-foreground">Clique na lixeira para remover.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    {genres.length === 0 ? (
+                      <span className="text-sm text-muted-foreground">Nenhum gênero cadastrado.</span>
+                    ) : (
+                      genres
+                        .filter(g => {
+                          if (!genreSearch.trim()) return true;
+                          return g.name.toLocaleLowerCase('pt-BR').includes(genreSearch.trim().toLocaleLowerCase('pt-BR'));
+                        })
+                        .map((g) => (
+                        <div key={g.id} className="flex items-center gap-2 border border-border rounded px-2 py-1">
+                          {editingGenreId === g.id ? (
+                            <form
+                              onSubmit={(e) => {
+                                e.preventDefault();
+                                if (!updatingGenre) saveEditGenre();
+                              }}
+                              className="flex items-center gap-2"
+                            >
+                              <Input
+                                value={editingGenreName}
+                                onChange={(e) => setEditingGenreName(e.target.value)}
+                                className="h-8 bg-input border-border"
+                                autoFocus
+                              />
+                              <Button
+                                type="submit"
+                                variant="outline"
+                                size="sm"
+                                disabled={updatingGenre}
+                                aria-label="Salvar gênero"
+                                className="border-border text-green-600 hover:text-green-600 flex items-center justify-center"
+                              >
+                                ✓
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={updatingGenre}
+                                onClick={cancelEditGenre}
+                                aria-label="Cancelar edição"
+                                className="border-border flex items-center justify-center"
+                              >
+                                ✕
+                              </Button>
+                            </form>
+                          ) : (
+                            <>
+                              <span className="text-sm text-foreground">{g.name}</span>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={updatingGenre}
+                                onClick={() => startEditGenre(g)}
+                                aria-label="Editar gênero"
+                                className="border-border"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => deleteGenre(g.id)}
+                                disabled={updatingGenre}
+                                className="border-border text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
           )}
         </Tabs>

@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2, X } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { mapToUserError } from '@/lib/errorUtils';
 
@@ -28,6 +29,7 @@ export const UserManagement = () => {
   const [loading, setLoading] = useState(true);
   const [editingUser, setEditingUser] = useState<UserRoleData | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [userSearch, setUserSearch] = useState('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -180,75 +182,119 @@ export const UserManagement = () => {
         <CardTitle>Gerenciar Usuários</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-2">
-          {users.map((user) => (
-            <div key={user.id} className="flex items-center justify-between p-2 border rounded">
-              <div className="flex items-center space-x-2">
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium">{getUserDisplayName(user)}</span>
-                  {user.profiles?.first_name && (
-                    <span className="text-xs text-muted-foreground">{user.user_id}</span>
-                  )}
+        <div className="space-y-4">
+          <div className="relative w-full sm:w-96">
+            <Input
+              placeholder="Buscar por nome, ID, perfil"
+              value={userSearch}
+              onChange={(e) => setUserSearch(e.target.value)}
+              className="pr-10"
+            />
+            {userSearch && (
+              <button
+                type="button"
+                onClick={() => setUserSearch('')}
+                aria-label="Limpar busca"
+                className="absolute top-1/2 -translate-y-1/2 right-2 h-6 w-6 flex items-center justify-center rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+          {(() => {
+            const term = userSearch.trim().toLocaleLowerCase('pt-BR');
+            const filtered = term
+              ? users.filter(u => {
+                  const display = getUserDisplayName(u).toLocaleLowerCase('pt-BR');
+                  const idPart = u.user_id.toLocaleLowerCase('pt-BR');
+                  const rolePart = getRoleLabel(u.role).toLocaleLowerCase('pt-BR');
+                  return (
+                    display.includes(term) ||
+                    idPart.includes(term) ||
+                    rolePart.includes(term)
+                  );
+                })
+              : users;
+            if (filtered.length === 0) {
+              return (
+                <div className="text-sm text-muted-foreground">
+                  {term ? 'Nenhum usuário corresponde à busca.' : 'Nenhum usuário encontrado.'}
                 </div>
-                {user.role === 'master' ? (
-                  <span className="px-2 py-1 rounded text-xs font-semibold bg-gradient-to-r from-blue-500 to-purple-500 text-white">Master</span>
-                ) : (
-                  <Badge variant={getRoleBadgeVariant(user.role)}>{getRoleLabel(user.role)}</Badge>
-                )}
+              );
+            }
+            return (
+              <div className="space-y-2">
+                {filtered.map((user) => (
+                  <div key={user.id} className="flex items-center justify-between p-2 border rounded">
+                    <div className="flex items-center space-x-2">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium">{getUserDisplayName(user)}</span>
+                        {user.profiles?.first_name && (
+                          <span className="text-xs text-muted-foreground">{user.user_id}</span>
+                        )}
+                      </div>
+                      {user.role === 'master' ? (
+                        <span className="px-2 py-1 rounded text-xs font-semibold bg-gradient-to-r from-blue-500 to-purple-500 text-white">Master</span>
+                      ) : (
+                        <Badge variant={getRoleBadgeVariant(user.role)}>{getRoleLabel(user.role)}</Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      {user.role !== 'master' && (
+                        <>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setEditingUser(user)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Editar Perfil do Usuário</DialogTitle>
+                              </DialogHeader>
+                              <div className="space-y-4">
+                                <div>
+                                  <p className="text-sm text-muted-foreground">ID do Usuário:</p>
+                                  <p className="text-sm font-mono">{user.user_id}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm text-muted-foreground mb-2">Novo Perfil:</p>
+                                  <Select 
+                                    defaultValue={user.role}
+                                    onValueChange={(value: UserRole) => updateUserRole(user.user_id, value)}
+                                    disabled={isUpdating}
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="admin">Admin</SelectItem>
+                                      <SelectItem value="user">Usuário</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => deleteUser(user.user_id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="flex items-center space-x-2">
-                {user.role !== 'master' && (
-                  <>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setEditingUser(user)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Editar Perfil do Usuário</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <div>
-                            <p className="text-sm text-muted-foreground">ID do Usuário:</p>
-                            <p className="text-sm font-mono">{user.user_id}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-muted-foreground mb-2">Novo Perfil:</p>
-                            <Select 
-                              defaultValue={user.role}
-                              onValueChange={(value: UserRole) => updateUserRole(user.user_id, value)}
-                              disabled={isUpdating}
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="admin">Admin</SelectItem>
-                                <SelectItem value="user">Usuário</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => deleteUser(user.user_id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </>
-                )}
-              </div>
-            </div>
-          ))}
+            );
+          })()}
         </div>
       </CardContent>
     </Card>
