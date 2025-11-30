@@ -57,7 +57,8 @@ const MovieDetail = () => {
   const [durationMinutes, setDurationMinutes] = useState<number>(0);
   const CURRENT_YEAR = new Date().getFullYear();
   const YEAR_OPTIONS = Array.from({ length: CURRENT_YEAR - 1895 + 1 }, (_, i) => CURRENT_YEAR - i);
-  const GENRE_OPTIONS = [
+  // Lista estática de fallback (usada apenas se fetch dinâmico falhar)
+  const GENRE_OPTIONS_FALLBACK = [
     "Ação", "Adulto", "Análise", "Animação", "Antologia", "Arthouse",
     "Aventura", "Biografia", "Comédia", "Crime", "Cult", "Cyberpunk",
     "Debate", "Distopia", "Documentário", "Drama", "Educativo", "Entrevista",
@@ -69,6 +70,8 @@ const MovieDetail = () => {
     "Steampunk", "Supernatural", "Talk Show", "Teen", "Thriller", "Tutorial",
     "Utopia", "Vlog", "Web Series", "Western"
   ];
+  const [genreOptions, setGenreOptions] = useState<string[]>(GENRE_OPTIONS_FALLBACK);
+  const [genresLoading, setGenresLoading] = useState(false);
   const formatDuration = (dur: string) => {
     const match = /^(\d{1,2}):(\d{2})$/.exec(dur);
     if (match) {
@@ -174,6 +177,31 @@ const MovieDetail = () => {
     }
   }, [id, navigate]);
 
+  const fetchGenres = useCallback(async () => {
+    try {
+      setGenresLoading(true);
+      const { data, error } = await supabase
+        .from('genres' as never)
+        .select('*')
+        .order('name', { ascending: true });
+      if (error) throw error;
+      if (data) {
+        const names = data
+          .map(g => {
+            const rec = g as unknown as { name: string };
+            return normalizeGenreName(rec.name);
+          })
+          .filter((v, i, arr) => v && arr.indexOf(v) === i)
+          .sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }));
+        if (names.length > 0) setGenreOptions(names);
+      }
+    } catch (err) {
+      // Fallback silencioso: mantém lista estática
+    } finally {
+      setGenresLoading(false);
+    }
+  }, []);
+
   const incrementViews = useCallback(async () => {
     if (!id) return;
     try {
@@ -188,7 +216,8 @@ const MovieDetail = () => {
     if (!id) return;
     fetchMovie();
     incrementViews();
-  }, [id, fetchMovie, incrementViews]);
+    fetchGenres();
+  }, [id, fetchMovie, incrementViews, fetchGenres]);
 
   // Remove duplicate non-callback version (replaced by useCallback above)
   /* const fetchMovie = async () => {
@@ -590,9 +619,11 @@ const MovieDetail = () => {
                                   <SelectValue placeholder="Adicione gêneros" />
                                 </SelectTrigger>
                                 <SelectContent className="bg-popover border-border max-h-60">
-                                  {GENRE_OPTIONS.filter(option => !editGenre.includes(option)).map((genreOption) => (
-                                    <SelectItem key={genreOption} value={genreOption}>{genreOption}</SelectItem>
-                                  ))}
+                                  {genreOptions
+                                    .filter(option => !editGenre.includes(option))
+                                    .map((genreOption) => (
+                                      <SelectItem key={genreOption} value={genreOption}>{genreOption}</SelectItem>
+                                    ))}
                                 </SelectContent>
                               </Select>
                               {editGenre.length > 0 && (
