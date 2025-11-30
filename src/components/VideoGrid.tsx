@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import VideoCard from "./VideoCard";
-import { Film } from "lucide-react";
-import { Search } from "lucide-react";
+import { Film, Search, RotateCcw } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
+import { Slider } from '@/components/ui/slider';
 import { toast } from 'sonner';
 
 interface Movie {
@@ -28,7 +28,8 @@ const VideoGrid = () => {
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   // Sempre exige todos os gêneros selecionados (modo AND fixo)
   const [filterYear, setFilterYear] = useState("");
-  const [filterDuration, setFilterDuration] = useState("");
+  const [durationRange, setDurationRange] = useState<[number, number]>([0, 0]);
+  const [durationBounds, setDurationBounds] = useState<{ min: number; max: number }>({ min: 0, max: 0 });
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 8;
   // Removido fetch explícito de gêneros; usamos apenas os presentes nos filmes
@@ -61,7 +62,27 @@ const VideoGrid = () => {
   .filter(Boolean)
   .sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }));
   const yearOptions = Array.from(new Set(movies.map(m => m.year))).sort((a, b) => b - a);
-  const durationOptions = Array.from(new Set(movies.map(m => m.duration))).filter(Boolean);
+  const parseDurationToMinutes = (raw: string): number => {
+    if (!raw) return 0;
+    const s = raw.trim();
+    // HH:MM
+    const hhmmMatch = /^(\d{1,2}):(\d{2})$/.exec(s);
+    if (hhmmMatch) return parseInt(hhmmMatch[1], 10) * 60 + parseInt(hhmmMatch[2], 10);
+    // Xh Ym ou Xh
+    const hMinMatch = /^(\d+)h(?:\s*(\d+)m)?$/i.exec(s);
+    if (hMinMatch) {
+      const h = parseInt(hMinMatch[1], 10);
+      const mm = hMinMatch[2] ? parseInt(hMinMatch[2], 10) : 0;
+      return h * 60 + mm;
+    }
+    // Xm ou X min
+    const justMinMatch = /^(\d+)\s*m(?:in)?$/i.exec(s);
+    if (justMinMatch) return parseInt(justMinMatch[1], 10);
+    // Número sozinho assume minutos
+    const soloMatch = /^(\d+)$/.exec(s);
+    if (soloMatch) return parseInt(soloMatch[1], 10);
+    return 0;
+  };
 
 
   // Filtragem e busca
@@ -81,11 +102,14 @@ const VideoGrid = () => {
       const genreOk = selectedGenres.length === 0
         ? true
         : selectedGenres.every(g => movieGenresNorm.includes(g));
+      const movieMinutes = parseDurationToMinutes(movie.duration);
+      const minOk = movieMinutes >= durationRange[0];
+      const maxOk = movieMinutes <= durationRange[1];
       return (
         (titleMatch || directorMatch || synopsisMatch) &&
         genreOk &&
         (!filterYear || movie.year.toString() === filterYear) &&
-        (!filterDuration || movie.duration === filterDuration)
+        minOk && maxOk
       );
     });
   const paginatedMovies = filteredMovies.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -110,6 +134,27 @@ const VideoGrid = () => {
   useEffect(() => {
     fetchMovies();
   }, [fetchMovies]);
+
+  // Ajusta bounds de duração quando filmes carregam
+  useEffect(() => {
+    if (movies.length === 0) return;
+    const durations = movies.map(m => parseDurationToMinutes(m.duration)).filter(d => d > 0);
+    if (durations.length === 0) {
+      setDurationBounds({ min: 0, max: 0 });
+      setDurationRange([0, 0]);
+      return;
+    }
+    const min = Math.min(...durations);
+    const max = Math.max(...durations);
+    setDurationBounds({ min, max });
+    // Se range inicial ainda é [0,0] ou fora dos limites, ajusta
+    setDurationRange(prev => {
+      if (prev[0] === 0 && prev[1] === 0) return [min, max];
+      const newMin = Math.max(min, prev[0]);
+      const newMax = Math.min(max, prev[1]);
+      return [newMin, newMax];
+    });
+  }, [movies]);
 
   if (loading) {
     return (
@@ -139,7 +184,8 @@ const VideoGrid = () => {
     search.trim().length > 0 ||
     selectedGenres.length > 0 ||
     filterYear !== '' ||
-    filterDuration !== ''
+    durationRange[0] !== durationBounds.min ||
+    durationRange[1] !== durationBounds.max
   );
   // Quando há filtros ativos, ocultamos a seção de destaque para evitar confusão;
   // filmes em destaque continuam aparecendo normalmente na listagem filtrada.
@@ -244,17 +290,34 @@ const VideoGrid = () => {
               </SelectContent>
             </Select>
           </div>
-          <div className="relative">
-            <Select value={filterDuration} onValueChange={(value) => { setFilterDuration(value); setPage(1); }}>
-              <SelectTrigger className="w-[160px] bg-background border-border transition-all duration-200 hover:shadow-[0_0_12px_2px_rgba(220,38,38,0.4)]">
-                <SelectValue placeholder="Duração" />
-              </SelectTrigger>
-              <SelectContent className="bg-popover border-border max-h-60">
-                {durationOptions.map(d => (
-                  <SelectItem key={d} value={d}>{d}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="inline-flex items-center h-10 px-3 gap-2 rounded-md border border-input bg-background w-[280px] text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors">
+            <span className="text-xs text-muted-foreground mr-2">Duração</span>
+            <div className="flex-1 relative">
+              <Slider
+                value={durationRange}
+                min={durationBounds.min}
+                max={durationBounds.max}
+                step={5}
+                onValueChange={(val) => { setDurationRange(val as [number, number]); setPage(1); }}
+                showValueTooltip
+                valueSuffix="m"
+                className="w-full"
+              />
+            </div>
+            <span className="ml-3 text-xs font-medium">{durationRange[0]}–{durationRange[1]}m</span>
+            { (durationRange[0] !== durationBounds.min || durationRange[1] !== durationBounds.max) && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => { setDurationRange([durationBounds.min, durationBounds.max]); setPage(1); }}
+                className="ml-1 hover:bg-destructive/15"
+                aria-label="Resetar duração"
+                title="Resetar duração"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </Button>
+            )}
           </div>
           <Button
             variant="outline"
@@ -262,7 +325,7 @@ const VideoGrid = () => {
               setSearch("");
               setSelectedGenres([]);
               setFilterYear("");
-              setFilterDuration("");
+              setDurationRange([durationBounds.min, durationBounds.max]);
               setPage(1);
             }}
             className="border-border hover:bg-destructive hover:text-destructive-foreground"

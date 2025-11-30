@@ -5,22 +5,44 @@ import { cn } from "@/lib/utils"
 
 const Slider = React.forwardRef<
   React.ElementRef<typeof SliderPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof SliderPrimitive.Root>
->(({ className, ...props }, ref) => (
-  <SliderPrimitive.Root
-    ref={ref}
-    className={cn(
-      "relative flex w-full touch-none select-none items-center",
-      className
-    )}
-    {...props}
-  >
-    <SliderPrimitive.Track className="relative h-2 w-full grow overflow-hidden rounded-full bg-secondary">
-      <SliderPrimitive.Range className="absolute h-full bg-primary" />
-    </SliderPrimitive.Track>
-    <SliderPrimitive.Thumb className="block h-5 w-5 rounded-full border-2 border-primary bg-background ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50" />
-  </SliderPrimitive.Root>
-))
+  React.ComponentPropsWithoutRef<typeof SliderPrimitive.Root> & { showValueTooltip?: boolean; valueSuffix?: string }
+>(({ className, showValueTooltip = false, valueSuffix = 'm', ...props }, ref) => {
+  const values: number[] = Array.isArray(props.value)
+    ? (props.value as number[])
+    : typeof props.value === 'number'
+      ? [props.value as number]
+      : [];
+  const min = typeof props.min === 'number' ? props.min : 0;
+  const max = typeof props.max === 'number' ? props.max : 100;
+  return (
+    <SliderPrimitive.Root
+      ref={ref}
+      className={cn(
+        "relative flex w-full touch-none select-none items-center",
+        className
+      )}
+      {...props}
+    >
+      <SliderPrimitive.Track className="relative h-2 w-full grow overflow-hidden rounded-full bg-secondary">
+        <SliderPrimitive.Range className="absolute h-full bg-primary" />
+      </SliderPrimitive.Track>
+      {values.map((_, idx) => (
+        <SliderPrimitive.Thumb
+          key={idx}
+          className="group relative block h-5 w-5 rounded-full border-2 border-primary bg-background ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+        >
+          {showValueTooltip && (
+            <span
+              className="pointer-events-none absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-popover px-1.5 py-0.5 text-[10px] font-medium text-foreground shadow border border-border"
+            >
+              {values[idx]}{valueSuffix}
+            </span>
+          )}
+        </SliderPrimitive.Thumb>
+      ))}
+    </SliderPrimitive.Root>
+  );
+})
 Slider.displayName = SliderPrimitive.Root.displayName
 
 export { Slider }
