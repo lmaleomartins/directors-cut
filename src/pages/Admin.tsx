@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useNavigate } from 'react-router-dom';
@@ -61,6 +61,7 @@ const Admin = () => {
     fetchProfile();
   }, [user]);
   const { userRole, canManageAllMovies, canManageUsers, loading: roleLoading } = useUserRole();
+  const canAll = canManageAllMovies();
   const navigate = useNavigate();
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,6 +71,13 @@ const Admin = () => {
   const [genres, setGenres] = useState<Genre[]>([]);
   const [newGenreName, setNewGenreName] = useState('');
   const [updatingGenre, setUpdatingGenre] = useState(false);
+
+  // Controle de requisições (single-flight + throttling)
+  const moviesInFlightRef = useRef(false);
+  const genresInFlightRef = useRef(false);
+  const lastMoviesFetchRef = useRef(0);
+  const lastGenresFetchRef = useRef(0);
+  const lastErrorRef = useRef(0);
 
   // Normaliza o nome do gênero: remove espaços extras e aplica Title Case (pt-BR)
   const normalizeGenreName = (raw: string) => {
@@ -101,14 +109,18 @@ const Admin = () => {
   // (moved below) Fetch movies and genres when ready
 
   const fetchMovies = useCallback(async () => {
+    const now = Date.now();
+    // Throttle: evita disparos em menos de 1.5s ou concorrentes
+    if (moviesInFlightRef.current || (now - lastMoviesFetchRef.current) < 1500) return;
+    moviesInFlightRef.current = true;
+    lastMoviesFetchRef.current = now;
     try {
       let query = supabase
         .from('movies')
         .select('*')
         .order('created_at', { ascending: false });
 
-      // Se não for admin ou master, mostrar apenas filmes criados pelo usuário
-      if (!canManageAllMovies() && user) {
+      if (!canAll && user) {
         query = query.eq('created_by', user.id);
       }
 
@@ -116,13 +128,22 @@ const Admin = () => {
       if (error) throw error;
       setMovies(data || []);
     } catch (error: unknown) {
-      toast.error(mapToUserError(error));
+      const t = Date.now();
+      if (t - lastErrorRef.current > 5000) { // cooldown de toast
+        lastErrorRef.current = t;
+        toast.error(mapToUserError(error));
+      }
     } finally {
+      moviesInFlightRef.current = false;
       setLoading(false);
     }
-  }, [user, canManageAllMovies]);
+  }, [user, canAll]);
 
   const fetchGenres = useCallback(async () => {
+    const now = Date.now();
+    if (genresInFlightRef.current || (now - lastGenresFetchRef.current) < 3000) return;
+    genresInFlightRef.current = true;
+    lastGenresFetchRef.current = now;
     try {
       const { data, error } = await supabase
         .from('genres' as never)
@@ -137,7 +158,14 @@ const Admin = () => {
         .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }))
       );
     } catch (error: unknown) {
-      // Se a tabela não existir, apenas ignore e mantenha lista vazia
+      // Silencia erros repetidos da ausência de tabela/políticas
+      const t = Date.now();
+      if (t - lastErrorRef.current > 5000) {
+        lastErrorRef.current = t;
+        // toast.error('Falha ao carregar gêneros.'); // opcional
+      }
+    } finally {
+      genresInFlightRef.current = false;
     }
   }, []);
 
@@ -195,7 +223,7 @@ const Admin = () => {
       fetchMovies();
       fetchGenres();
     }
-  }, [user, navigate, roleLoading, fetchMovies, fetchGenres]);
+  }, [user, roleLoading, fetchMovies, fetchGenres, navigate]);
 
   const resetForm = () => {
     setTitle('');
