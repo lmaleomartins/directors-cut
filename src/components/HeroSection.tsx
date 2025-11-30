@@ -2,6 +2,11 @@ import { Button } from "@/components/ui/button";
 import { Play, Film } from "lucide-react";
 
 const HeroSection = () => {
+  const scrollTo = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   return (
     <section className="relative h-[70vh] flex items-center justify-center overflow-hidden">{/* Removido bg-gradient-hero */}
       {/* Minimalist geometric background */}
@@ -20,15 +25,14 @@ const HeroSection = () => {
           </span>
         </h1>
         <p className="text-xl md:text-2xl mb-8 text-muted-foreground leading-relaxed">
-          Seu repositório de cinema cult, arthouse e filmes independentes. 
-          Descubra obras-primas esquecidas e clássicos alternativos.
+          Onde novas vozes do Cinema encontram espaço para nascer, crescer e inspirar.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-glow">
+          <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-glow" onClick={() => scrollTo('catalog')}>
             <Play className="w-5 h-5 mr-2" />
             Explorar Catálogo
           </Button>
-          <Button variant="outline" size="lg" className="border-border text-foreground hover:bg-accent">
+          <Button variant="outline" size="lg" className="border-border text-foreground hover:bg-accent" onClick={() => scrollTo('about')}>
             <Film className="w-5 h-5 mr-2" />
             Sobre o Projeto
           </Button>

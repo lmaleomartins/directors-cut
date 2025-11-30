@@ -100,7 +100,7 @@ const VideoGrid = () => {
   // Catálogo agora exibe todos os filmes, inclusive os destacados
 
   return (
-    <div className="container mx-auto px-4 py-12">
+    <div id="catalog" className="container mx-auto px-4 py-12">
       {/* Seção em Destaque */}
       {featuredMovies.length > 0 && (
         <section className="mb-16">

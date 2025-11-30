@@ -9,7 +9,7 @@ const MEMBERS: string[] = [
 
 const Footer = () => {
   return (
-    <footer className="bg-secondary/50 border-t border-border mt-16">
+    <footer id="about" className="bg-secondary/50 border-t border-border mt-16">
       <div className="container mx-auto px-4 py-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
