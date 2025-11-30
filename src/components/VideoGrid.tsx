@@ -4,6 +4,7 @@ import VideoCard from "./VideoCard";
 import { Film } from "lucide-react";
 import { Search } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
@@ -24,13 +25,13 @@ const VideoGrid = () => {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [filterGenre, setFilterGenre] = useState("");
+  const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
+  // Sempre exige todos os gêneros selecionados (modo AND fixo)
   const [filterYear, setFilterYear] = useState("");
   const [filterDuration, setFilterDuration] = useState("");
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 8;
-  const [genres, setGenres] = useState<{ id: string; name: string }[]>([]);
-  const [genresLoading, setGenresLoading] = useState<boolean>(false);
+  // Removido fetch explícito de gêneros; usamos apenas os presentes nos filmes
 
   // Gêneros, anos e durações disponíveis
   const normalizeGenreName = (raw: string) => {
@@ -44,7 +45,21 @@ const VideoGrid = () => {
       )
       .join(' ');
   };
-  const genreOptions = genres.map(g => normalizeGenreName(g.name));
+  // Gêneros disponíveis realmente presentes nos filmes (evita mostrar gêneros não usados)
+  const genreOptions = Array.from(new Set(
+    movies.flatMap(m => {
+      const raw = m.genre;
+      const list = Array.isArray(raw)
+        ? raw
+        : String(raw)
+            .split(',')
+            .map(seg => seg.trim())
+            .filter(Boolean);
+      return list.map(g => normalizeGenreName(String(g)));
+    })
+  ))
+  .filter(Boolean)
+  .sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }));
   const yearOptions = Array.from(new Set(movies.map(m => m.year))).sort((a, b) => b - a);
   const durationOptions = Array.from(new Set(movies.map(m => m.duration))).filter(Boolean);
 
@@ -56,11 +71,19 @@ const VideoGrid = () => {
       const titleMatch = movie.title.toLowerCase().includes(searchLower);
       const directorMatch = movie.director.toLowerCase().includes(searchLower);
       const synopsisMatch = movie.synopsis ? movie.synopsis.toLowerCase().includes(searchLower) : false;
-      const movieGenres = Array.isArray(movie.genre) ? movie.genre : [movie.genre];
-      const movieGenresNorm = movieGenres.filter(Boolean).map(g => normalizeGenreName(String(g)));
+      const movieGenres = Array.isArray(movie.genre)
+        ? movie.genre
+        : String(movie.genre)
+            .split(',')
+            .map(seg => seg.trim())
+            .filter(Boolean);
+      const movieGenresNorm = movieGenres.map(g => normalizeGenreName(String(g)));
+      const genreOk = selectedGenres.length === 0
+        ? true
+        : selectedGenres.every(g => movieGenresNorm.includes(g));
       return (
         (titleMatch || directorMatch || synopsisMatch) &&
-        (!filterGenre || movieGenresNorm.includes(filterGenre)) &&
+        genreOk &&
         (!filterYear || movie.year.toString() === filterYear) &&
         (!filterDuration || movie.duration === filterDuration)
       );
@@ -84,32 +107,9 @@ const VideoGrid = () => {
     }
   }, []);
 
-  const fetchGenres = useCallback(async () => {
-    try {
-      setGenresLoading(true);
-      const { data, error } = await supabase
-        .from('genres' as never)
-        .select('*')
-        .order('name', { ascending: true });
-      if (error) throw error;
-      setGenres(
-        ((data || []).map((g: unknown) => {
-          const rec = g as { id: string; name: string };
-          return { id: rec.id, name: rec.name };
-        }))
-        .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }))
-      );
-    } catch (error: unknown) {
-      // tabela pode não existir ainda; ignore
-    } finally {
-      setGenresLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
     fetchMovies();
-    fetchGenres();
-  }, [fetchMovies, fetchGenres]);
+  }, [fetchMovies]);
 
   if (loading) {
     return (
@@ -135,12 +135,19 @@ const VideoGrid = () => {
   }
 
   const featuredMovies = movies.filter(movie => movie.featured);
-  // Catálogo agora exibe todos os filmes, inclusive os destacados
+  const hasActiveFilters = (
+    search.trim().length > 0 ||
+    selectedGenres.length > 0 ||
+    filterYear !== '' ||
+    filterDuration !== ''
+  );
+  // Quando há filtros ativos, ocultamos a seção de destaque para evitar confusão;
+  // filmes em destaque continuam aparecendo normalmente na listagem filtrada.
 
   return (
     <div id="catalog" className="container mx-auto px-4 py-12">
       {/* Seção em Destaque */}
-      {featuredMovies.length > 0 && (
+      {!hasActiveFilters && featuredMovies.length > 0 && (
         <section className="mb-16">
           <h2 className="text-3xl font-bold mb-8 text-center">
             <span className="bg-gradient-accent bg-clip-text text-transparent">
@@ -182,17 +189,48 @@ const VideoGrid = () => {
             )}
           </div>
           <div className="relative">
-            <Select value={filterGenre || '__all__'} onValueChange={(value) => { setFilterGenre(value === '__all__' ? '' : value); setPage(1); }}>
-              <SelectTrigger className="w-[160px] bg-background border-border transition-all duration-200 hover:shadow-[0_0_12px_2px_rgba(220,38,38,0.4)]" disabled={genresLoading}>
-                <SelectValue placeholder={genresLoading ? 'Carregando gêneros...' : 'Gênero'} />
-              </SelectTrigger>
-              <SelectContent className="bg-popover border-border max-h-60">
-                <SelectItem value="__all__">Todos</SelectItem>
-                {[...genreOptions].sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' })).map(g => (
-                  <SelectItem key={g} value={g}>{g}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex flex-col items-start gap-1">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="w-[220px] justify-between">
+                    {selectedGenres.length === 0
+                      ? 'Filtrar gêneros'
+                      : selectedGenres.slice(0,2).join(', ') + (selectedGenres.length > 2 ? ` +${selectedGenres.length-2}` : '')}
+                    <span className="ml-2 text-xs text-muted-foreground">▼</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-64 max-h-72 overflow-y-auto">
+                  {genreOptions.length === 0 && (
+                    <div className="px-2 py-1.5 text-sm text-muted-foreground">Nenhum gênero disponível</div>
+                  )}
+                  {genreOptions.map(g => {
+                    const checked = selectedGenres.includes(g);
+                    return (
+                      <DropdownMenuCheckboxItem
+                        key={g}
+                        checked={checked}
+                        onCheckedChange={(v) => {
+                          setPage(1);
+                          setSelectedGenres(prev => v ? [...prev, g] : prev.filter(x => x !== g));
+                        }}
+                      >
+                        {g}
+                      </DropdownMenuCheckboxItem>
+                    );
+                  })}
+                  {selectedGenres.length > 0 && (
+                    <div className="px-2 py-2 border-t mt-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => { setSelectedGenres([]); setPage(1); }}
+                      >Limpar seleção</Button>
+                    </div>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
           <div className="relative">
             <Select value={filterYear} onValueChange={(value) => { setFilterYear(value); setPage(1); }}>
@@ -222,7 +260,7 @@ const VideoGrid = () => {
             variant="outline"
             onClick={() => {
               setSearch("");
-              setFilterGenre("");
+              setSelectedGenres([]);
               setFilterYear("");
               setFilterDuration("");
               setPage(1);
