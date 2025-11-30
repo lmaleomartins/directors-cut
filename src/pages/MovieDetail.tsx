@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -92,14 +92,106 @@ const MovieDetail = () => {
     return dur;
   };
 
-  useEffect(() => {
-    if (id) {
-      fetchMovie();
-      incrementViews();
+  const normalizeGenreName = (raw: string) => {
+    const trimmed = raw.trim().replace(/\s+/g, ' ');
+    return trimmed
+      .split(' ')
+      .map(word => word
+        .split('-')
+        .map(part => part.length === 0 ? part : part[0].toLocaleUpperCase('pt-BR') + part.slice(1).toLocaleLowerCase('pt-BR'))
+        .join('-')
+      )
+      .join(' ');
+  };
+
+  const fetchMovie = useCallback(async () => {
+    if (!id) return;
+    try {
+      const { data, error } = await supabase
+        .from('movies')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (error) {
+        const errCode = (error as unknown as { code?: string }).code;
+        if (errCode === 'PGRST116') {
+          toast.error('Filme não encontrado');
+          navigate('/');
+          return;
+        }
+        throw error;
+      }
+      setMovie(data);
+      setEditTitle(data.title || '');
+      setEditDirector(data.director || '');
+      setEditDuration(data.duration || '');
+      setEditThumbnail(data.thumbnail || '');
+      setEditVideoUrl(data.video_url || '');
+      setEditSynopsis(data.synopsis || '');
+      setEditYear(data.year);
+      setEditGenre(String(data.genre).split(',').map(g => g.trim()).filter(Boolean));
+      setEditFeatured(!!data.featured);
+      try {
+        const { count } = await supabase
+          .from('movies')
+          .select('id', { count: 'exact', head: true })
+          .eq('featured', true)
+          .neq('id', data.id);
+        setFeaturedCount(count || 0);
+      } catch {
+        setFeaturedCount(0);
+      }
+      const m = /^(\d{1,2}):(\d{2})$/.exec(data.duration || '');
+      if (m) {
+        setDurationHours(parseInt(m[1]));
+        setDurationMinutes(parseInt(m[2]));
+      } else {
+        const minMatch = /(\d+)\s*min/.exec(data.duration || '');
+        const total = minMatch ? parseInt(minMatch[1]) : 0;
+        setDurationHours(Math.floor(total / 60));
+        setDurationMinutes(total % 60);
+      }
+      if (data?.created_by) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('user_id', data.created_by)
+          .single();
+        if (profileData) {
+          const name = [profileData.first_name, profileData.last_name].filter(Boolean).join(' ');
+          setCreatorName(name || null);
+        } else {
+          setCreatorName(null);
+        }
+      } else {
+        setCreatorName(null);
+      }
+    } catch (error: unknown) {
+      toast.error('Erro ao carregar filme');
+      navigate('/');
+    } finally {
+      setLoading(false);
+    }
+  }, [id, navigate]);
+
+  const incrementViews = useCallback(async () => {
+    if (!id) return;
+    try {
+      const { error } = await supabase.rpc('increment_movie_views', { movie_id: id });
+      if (error) throw error;
+    } catch (error: unknown) {
+      // Silently fail
     }
   }, [id]);
 
-  const fetchMovie = async () => {
+  useEffect(() => {
+    if (!id) return;
+    fetchMovie();
+    incrementViews();
+  }, [id, fetchMovie, incrementViews]);
+
+  // Remove duplicate non-callback version (replaced by useCallback above)
+  /* const fetchMovie = async () => {
     if (!id) return;
     
     try {
@@ -173,9 +265,9 @@ const MovieDetail = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }; */
 
-  const incrementViews = async () => {
+  /* const incrementViews = async () => {
     if (!id) return;
     
     try {
@@ -189,7 +281,7 @@ const MovieDetail = () => {
       // Silently fail - views increment is not critical
       console.error('Failed to increment views:', error);
     }
-  };
+  }; */
 
   const canEditHere = () => {
     if (!movie) return false;
@@ -237,14 +329,14 @@ const MovieDetail = () => {
       toast.success('Filme atualizado com sucesso!');
       setEditOpen(false);
       await fetchMovie();
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error('Erro ao atualizar filme');
     }
   };
 
   const getVideoEmbedUrl = (url: string) => {
     // YouTube
-    const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+    const youtubeRegex = /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\s]{11})/;
     const youtubeMatch = url.match(youtubeRegex);
     if (youtubeMatch) {
       return `https://www.youtube.com/embed/${youtubeMatch[1]}`;
@@ -284,7 +376,7 @@ const MovieDetail = () => {
 
   const isEmbeddableVideo = (url: string) => {
     const patterns = [
-      /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)/,
+      /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)/,
       /(?:vimeo\.com\/)/,
       /(?:dailymotion\.com\/video\/|dai\.ly\/)/,
       /(?:twitch\.tv\/videos\/)/,
@@ -570,7 +662,7 @@ const MovieDetail = () => {
               <div>
                 <h3 className="text-lg font-semibold text-foreground mb-2">Gênero</h3>
                 <Badge variant="secondary" className="text-sm">
-                  {movie.genre}
+                  {normalizeGenreName(movie.genre)}
                 </Badge>
               </div>
 
@@ -608,7 +700,7 @@ const MovieDetail = () => {
                   </div>
                   <div>
                     <span className="text-muted-foreground">Gênero:</span>
-                    <p className="text-foreground font-medium">{movie.genre}</p>
+                    <p className="text-foreground font-medium">{normalizeGenreName(movie.genre)}</p>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Visualizações:</span>

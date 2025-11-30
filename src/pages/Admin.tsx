@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useNavigate } from 'react-router-dom';
@@ -40,18 +40,8 @@ const CURRENT_YEAR = new Date().getFullYear();
 const YEAR_OPTIONS = Array.from({ length: CURRENT_YEAR - 1895 + 1 }, (_, i) => CURRENT_YEAR - i);
 
 
-const GENRE_OPTIONS = [
-  "Ação", "Adulto", "Análise", "Animação", "Antologia", "Arthouse", 
-  "Aventura", "Biografia", "Comédia", "Crime", "Cult", "Cyberpunk", 
-  "Debate", "Distopia", "Documentário", "Drama", "Educativo", "Entrevista", 
-  "Esporte", "Experimental", "Família", "Fantasia", "Ficção Científica", 
-  "Film-Noir", "Found Footage", "Game Show", "Gameplay", "Guerra", 
-  "História", "Horror", "Independente", "Infantil", "LGBTQ+", "Mesa Redonda", 
-  "Minissérie", "Mistério", "Mockumentário", "Musical", "Noir", "Notícias", 
-  "Palestra", "Podcast", "Reality Show", "Resenha", "Romance", "Stand-up", 
-  "Steampunk", "Supernatural", "Talk Show", "Teen", "Thriller", "Tutorial", 
-  "Utopia", "Vlog", "Web Series", "Western"
-];
+// Lista de gêneros dinâmica via Supabase
+interface Genre { id: string; name: string }
 
 const Admin = () => {
   const [profile, setProfile] = useState<{ first_name?: string; last_name?: string } | null>(null);
@@ -76,6 +66,24 @@ const Admin = () => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingMovie, setEditingMovie] = useState<Movie | null>(null);
+  // Genres
+  const [genres, setGenres] = useState<Genre[]>([]);
+  const [newGenreName, setNewGenreName] = useState('');
+  const [updatingGenre, setUpdatingGenre] = useState(false);
+
+  // Normaliza o nome do gênero: remove espaços extras e aplica Title Case (pt-BR)
+  const normalizeGenreName = (raw: string) => {
+    const trimmed = raw.trim().replace(/\s+/g, ' ');
+    // Divide por espaços e hifens para capitalizar partes compostas
+    return trimmed
+      .split(' ')
+      .map(word => word
+        .split('-')
+        .map(part => part.length === 0 ? part : part[0].toLocaleUpperCase('pt-BR') + part.slice(1).toLocaleLowerCase('pt-BR'))
+        .join('-')
+      )
+      .join(' ');
+  };
   
   // Form states
   const [title, setTitle] = useState('');
@@ -90,15 +98,9 @@ const Admin = () => {
   const [synopsis, setSynopsis] = useState('');
   const [featured, setFeatured] = useState(false);
 
-  useEffect(() => {
-    if (!user) {
-      navigate('/auth');
-    } else if (!roleLoading) {
-      fetchMovies();
-    }
-  }, [user, navigate, roleLoading, canManageAllMovies]);
+  // (moved below) Fetch movies and genres when ready
 
-  const fetchMovies = async () => {
+  const fetchMovies = useCallback(async () => {
     try {
       let query = supabase
         .from('movies')
@@ -113,12 +115,87 @@ const Admin = () => {
       const { data, error } = await query;
       if (error) throw error;
       setMovies(data || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(mapToUserError(error));
     } finally {
       setLoading(false);
     }
+  }, [user, canManageAllMovies]);
+
+  const fetchGenres = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('genres' as never)
+        .select('*')
+        .order('name', { ascending: true });
+      if (error) throw error;
+      setGenres(
+        ((data || []).map((g: unknown) => {
+          const rec = g as { id: string; name: string };
+          return { id: rec.id, name: rec.name };
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }))
+      );
+    } catch (error: unknown) {
+      // Se a tabela não existir, apenas ignore e mantenha lista vazia
+    }
+  }, []);
+
+  const addGenre = async () => {
+    const name = normalizeGenreName(newGenreName);
+    if (!name) {
+      toast.error('Informe um nome de gênero.');
+      return;
+    }
+    if (genres.some(g => g.name.toLocaleLowerCase('pt-BR') === name.toLocaleLowerCase('pt-BR'))) {
+      toast.error('Este gênero já existe.');
+      return;
+    }
+    try {
+      setUpdatingGenre(true);
+      const { error } = await (supabase as unknown as { from: (relation: string) => { insert: (vals: unknown[]) => Promise<{ error: unknown }>; delete: () => unknown } })
+        .from('genres')
+        .insert([{ name }]);
+      if (error) throw error;
+      toast.success('Gênero adicionado.');
+      setNewGenreName('');
+      await fetchGenres();
+    } catch (error: unknown) {
+      toast.error(mapToUserError(error));
+    } finally {
+      setUpdatingGenre(false);
+    }
   };
+
+  const deleteGenre = async (id: string) => {
+    if (!confirm('Excluir este gênero? Filmes existentes não serão alterados automaticamente.')) return;
+    try {
+      setUpdatingGenre(true);
+      const { error } = await (supabase as unknown as { from: (relation: string) => { delete: () => { eq: (col: string, val: unknown) => Promise<{ error: unknown }> } } })
+        .from('genres')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+      toast.success('Gênero excluído.');
+      await fetchGenres();
+    } catch (error: unknown) {
+      toast.error(mapToUserError(error));
+    } finally {
+      setUpdatingGenre(false);
+    }
+  };
+
+  // Fetch movies and genres when ready (placed after declarations to satisfy hooks lint)
+  useEffect(() => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+    if (!roleLoading) {
+      fetchMovies();
+      fetchGenres();
+    }
+  }, [user, navigate, roleLoading, fetchMovies, fetchGenres]);
 
   const resetForm = () => {
     setTitle('');
@@ -229,7 +306,7 @@ const Admin = () => {
       setDialogOpen(false);
       resetForm();
       fetchMovies();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(mapToUserError(error));
     }
   };
@@ -246,7 +323,7 @@ const Admin = () => {
       if (error) throw error;
       toast.success('Filme excluído com sucesso!');
       fetchMovies();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(mapToUserError(error));
     }
   };
@@ -484,9 +561,12 @@ const Admin = () => {
                               <SelectValue placeholder="Adicione gêneros" />
                             </SelectTrigger>
                             <SelectContent className="bg-popover border-border max-h-60">
-                              {GENRE_OPTIONS.filter(option => !genre.includes(option)).map((genreOption) => (
-                                <SelectItem key={genreOption} value={genreOption}>
-                                  {genreOption}
+                              {genres
+                                .filter(option => !genre.includes(option.name))
+                                .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }))
+                                .map((genreOption) => (
+                                <SelectItem key={genreOption.id} value={genreOption.name}>
+                                  {genreOption.name}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -500,7 +580,7 @@ const Admin = () => {
                                   className="cursor-pointer hover:bg-destructive hover:text-destructive-foreground"
                                   onClick={() => setGenre(genre.filter(g => g !== selectedGenre))}
                                 >
-                                  {selectedGenre} ×
+                                  {normalizeGenreName(selectedGenre)} ×
                                 </Badge>
                               ))}
                             </div>
@@ -578,6 +658,49 @@ const Admin = () => {
                 </DialogContent>
               </Dialog>
             </div>
+
+            {userRole === 'master' && (
+              <Card className="bg-card border-border">
+                <CardHeader>
+                  <CardTitle className="text-foreground">Gerenciar Gêneros</CardTitle>
+                  <CardDescription className="text-muted-foreground">Adicionar e remover gêneros disponíveis no catálogo.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Input
+                      id="new-genre"
+                      placeholder="Novo gênero (ex.: Biografia)"
+                      value={newGenreName}
+                      onChange={(e) => setNewGenreName(e.target.value)}
+                      className="bg-input border-border w-full sm:w-auto"
+                    />
+                    <Button onClick={addGenre} disabled={updatingGenre} className="bg-primary hover:bg-primary/90 w-full sm:w-auto">
+                      Adicionar
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {genres.length === 0 ? (
+                      <span className="text-sm text-muted-foreground">Nenhum gênero cadastrado.</span>
+                    ) : (
+                      genres.map((g) => (
+                        <div key={g.id} className="flex items-center gap-2 border border-border rounded px-2 py-1">
+                          <span className="text-sm text-foreground">{g.name}</span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => deleteGenre(g.id)}
+                            disabled={updatingGenre}
+                            className="border-border text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {movies.map((movie) => (

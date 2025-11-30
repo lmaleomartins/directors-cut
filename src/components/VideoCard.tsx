@@ -28,6 +28,18 @@ const VideoCard = ({
 }: VideoCardProps) => {
   const navigate = useNavigate();
 
+  const normalizeGenreName = (raw: string) => {
+    const trimmed = raw.trim().replace(/\s+/g, ' ');
+    return trimmed
+      .split(' ')
+      .map(word => word
+        .split('-')
+        .map(part => part.length === 0 ? part : part[0].toLocaleUpperCase('pt-BR') + part.slice(1).toLocaleLowerCase('pt-BR'))
+        .join('-')
+      )
+      .join(' ');
+  };
+
   const handleClick = () => {
     navigate(`/movie/${id}`);
   };
@@ -75,7 +87,7 @@ const VideoCard = ({
         </p>
         <div className="flex items-center justify-between">
           <Badge variant="secondary" className="text-xs">
-            {genre}
+            {normalizeGenreName(genre)}
           </Badge>
           <div className="flex items-center text-muted-foreground text-xs">
             <Eye className="w-3 h-3 mr-1" />

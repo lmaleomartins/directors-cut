@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import VideoCard from "./VideoCard";
 import { Film } from "lucide-react";
@@ -29,9 +29,22 @@ const VideoGrid = () => {
   const [filterDuration, setFilterDuration] = useState("");
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 8;
+  const [genres, setGenres] = useState<{ id: string; name: string }[]>([]);
+  const [genresLoading, setGenresLoading] = useState<boolean>(false);
 
   // Gêneros, anos e durações disponíveis
-  const genreOptions = Array.from(new Set(movies.map(m => Array.isArray(m.genre) ? m.genre : [m.genre]).flat())).filter(Boolean);
+  const normalizeGenreName = (raw: string) => {
+    const trimmed = raw.trim().replace(/\s+/g, ' ');
+    return trimmed
+      .split(' ')
+      .map(word => word
+        .split('-')
+        .map(part => part.length === 0 ? part : part[0].toLocaleUpperCase('pt-BR') + part.slice(1).toLocaleLowerCase('pt-BR'))
+        .join('-')
+      )
+      .join(' ');
+  };
+  const genreOptions = genres.map(g => normalizeGenreName(g.name));
   const yearOptions = Array.from(new Set(movies.map(m => m.year))).sort((a, b) => b - a);
   const durationOptions = Array.from(new Set(movies.map(m => m.duration))).filter(Boolean);
 
@@ -43,9 +56,11 @@ const VideoGrid = () => {
       const titleMatch = movie.title.toLowerCase().includes(searchLower);
       const directorMatch = movie.director.toLowerCase().includes(searchLower);
       const synopsisMatch = movie.synopsis ? movie.synopsis.toLowerCase().includes(searchLower) : false;
+      const movieGenres = Array.isArray(movie.genre) ? movie.genre : [movie.genre];
+      const movieGenresNorm = movieGenres.filter(Boolean).map(g => normalizeGenreName(String(g)));
       return (
         (titleMatch || directorMatch || synopsisMatch) &&
-        (!filterGenre || (Array.isArray(movie.genre) ? movie.genre.includes(filterGenre) : movie.genre === filterGenre)) &&
+        (!filterGenre || movieGenresNorm.includes(filterGenre)) &&
         (!filterYear || movie.year.toString() === filterYear) &&
         (!filterDuration || movie.duration === filterDuration)
       );
@@ -53,11 +68,7 @@ const VideoGrid = () => {
   const paginatedMovies = filteredMovies.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const totalPages = Math.ceil(filteredMovies.length / PAGE_SIZE);
 
-  useEffect(() => {
-    fetchMovies();
-  }, []);
-
-  const fetchMovies = async () => {
+  const fetchMovies = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('movies')
@@ -66,12 +77,39 @@ const VideoGrid = () => {
 
       if (error) throw error;
       setMovies(data || []);
-    } catch (error: any) {
-      toast.error('Erro ao carregar filmes: ' + error.message);
+    } catch (error: unknown) {
+      toast.error('Erro ao carregar filmes');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  const fetchGenres = useCallback(async () => {
+    try {
+      setGenresLoading(true);
+      const { data, error } = await supabase
+        .from('genres' as never)
+        .select('*')
+        .order('name', { ascending: true });
+      if (error) throw error;
+      setGenres(
+        ((data || []).map((g: unknown) => {
+          const rec = g as { id: string; name: string };
+          return { id: rec.id, name: rec.name };
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }))
+      );
+    } catch (error: unknown) {
+      // tabela pode não existir ainda; ignore
+    } finally {
+      setGenresLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchMovies();
+    fetchGenres();
+  }, [fetchMovies, fetchGenres]);
 
   if (loading) {
     return (
@@ -144,12 +182,13 @@ const VideoGrid = () => {
             )}
           </div>
           <div className="relative">
-            <Select value={filterGenre} onValueChange={(value) => { setFilterGenre(value); setPage(1); }}>
-              <SelectTrigger className="w-[140px] bg-background border-border transition-all duration-200 hover:shadow-[0_0_12px_2px_rgba(220,38,38,0.4)]">
-                <SelectValue placeholder="Gênero" />
+            <Select value={filterGenre || '__all__'} onValueChange={(value) => { setFilterGenre(value === '__all__' ? '' : value); setPage(1); }}>
+              <SelectTrigger className="w-[160px] bg-background border-border transition-all duration-200 hover:shadow-[0_0_12px_2px_rgba(220,38,38,0.4)]" disabled={genresLoading}>
+                <SelectValue placeholder={genresLoading ? 'Carregando gêneros...' : 'Gênero'} />
               </SelectTrigger>
               <SelectContent className="bg-popover border-border max-h-60">
-                {genreOptions.map(g => (
+                <SelectItem value="__all__">Todos</SelectItem>
+                {[...genreOptions].sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' })).map(g => (
                   <SelectItem key={g} value={g}>{g}</SelectItem>
                 ))}
               </SelectContent>
