@@ -39,15 +39,6 @@ interface Movie {
 const CURRENT_YEAR = new Date().getFullYear();
 const YEAR_OPTIONS = Array.from({ length: CURRENT_YEAR - 1895 + 1 }, (_, i) => CURRENT_YEAR - i);
 
-const DURATION_OPTIONS = [
-  { value: "Menos de 30 min", label: "Menos de 30 min (Curta-metragem)" },
-  { value: "30-60 min", label: "30-60 min" },
-  { value: "60-90 min", label: "60-90 min" },
-  { value: "90-120 min", label: "90-120 min" },
-  { value: "120-150 min", label: "120-150 min" },
-  { value: "150-180 min", label: "150-180 min" },
-  { value: "Mais de 180 min", label: "Mais de 180 min (Épico)" },
-];
 
 const GENRE_OPTIONS = [
   "Ação", "Adulto", "Análise", "Animação", "Antologia", "Arthouse", 
@@ -301,12 +292,12 @@ const Admin = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="container mx-auto px-4 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center space-x-3">
             <Film className="w-8 h-8 text-primary" />
             <div>
               <h1 className="text-2xl font-bold text-foreground">Admin Panel</h1>
-              <div className="flex items-center space-x-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <p className="text-sm text-muted-foreground">Perfil:</p>
                   <span className="font-semibold text-foreground">
                     {profile?.first_name || ''} {profile?.last_name || ''}
@@ -318,11 +309,11 @@ const Admin = () => {
             </div>
           </div>
           
-          <div className="flex items-center space-x-4">
+          <div className="flex items-stretch gap-2 sm:items-center sm:gap-4 sm:flex-row flex-col">
             <Button
               variant="outline"
               onClick={() => navigate('/')}
-              className="border-border"
+              className="border-border w-full sm:w-auto h-9 sm:h-10"
             >
               <Eye className="w-4 h-4 mr-2" />
               Ver Site
@@ -331,7 +322,7 @@ const Admin = () => {
             <Button
               variant="outline"
               onClick={handleSignOut}
-              className="border-border text-destructive hover:text-destructive"
+              className="border-border text-destructive hover:text-destructive w-full sm:w-auto h-9 sm:h-10"
             >
               <LogOut className="w-4 h-4 mr-2" />
               Sair
@@ -356,7 +347,7 @@ const Admin = () => {
           </TabsList>
 
           <TabsContent value="movies" className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-3xl font-bold text-foreground">
                   {canManageAllMovies() ? 'Catálogo de Filmes' : 'Meus Filmes'}
@@ -371,7 +362,7 @@ const Admin = () => {
                 <DialogTrigger asChild>
                   <Button 
                     id="add-movie-button"
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto"
                     onClick={resetForm}
                   >
                     <Plus className="w-4 h-4 mr-2" />
@@ -379,7 +370,7 @@ const Admin = () => {
                   </Button>
                 </DialogTrigger>
                 
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-card">
+                <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-2xl max-h-[90vh] overflow-y-auto bg-card">
                   <DialogHeader>
                     <DialogTitle className="text-foreground">
                       {editingMovie ? 'Editar Filme' : 'Adicionar Filme'}
@@ -390,7 +381,7 @@ const Admin = () => {
                   </DialogHeader>
                   
                   <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="title">Título *</Label>
                         <Input
@@ -414,7 +405,7 @@ const Admin = () => {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="year">Ano *</Label>
                         <Select value={year.toString()} onValueChange={(value) => setYear(parseInt(value))}>
@@ -570,15 +561,16 @@ const Admin = () => {
                       </div>
                     )}
 
-                    <div className="flex justify-end space-x-2 pt-4">
+                    <div className="flex flex-col-reverse sm:flex-row gap-2 pt-4 sm:justify-end">
                       <Button
                         type="button"
                         variant="outline"
                         onClick={() => setDialogOpen(false)}
+                        className="w-full sm:w-auto"
                       >
                         Cancelar
                       </Button>
-                      <Button type="submit" className="bg-primary hover:bg-primary/90">
+                      <Button type="submit" className="bg-primary hover:bg-primary/90 w-full sm:w-auto">
                         {editingMovie ? 'Salvar Alterações' : 'Adicionar Filme'}
                       </Button>
                     </div>
@@ -616,7 +608,7 @@ const Admin = () => {
                     </div>
                     
                     {canEditMovie(movie) && (
-                      <div className="flex justify-end space-x-2">
+                      <div className="flex flex-wrap justify-end gap-2">
                         <Button
                           variant="outline"
                           size="sm"

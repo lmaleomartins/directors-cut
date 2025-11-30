@@ -26,7 +26,7 @@ const Footer = () => {
 
           <div>
             <h4 className="font-semibold text-foreground mb-2">Integrantes do Projeto</h4>
-            <ul className="grid grid-cols-2 gap-y-1.5 text-foreground text-sm">
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-y-1.5 text-foreground text-sm">
               {MEMBERS.map((name) => (
                 <li key={name} className="flex items-center gap-2">
                   <span className="inline-block w-1 h-1 rounded-full bg-primary" />

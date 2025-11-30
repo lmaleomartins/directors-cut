@@ -109,7 +109,7 @@ const VideoGrid = () => {
               Em Destaque
             </span>
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mx-auto max-w-4xl">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mx-auto max-w-4xl justify-items-center">
             {featuredMovies.slice(0, 3).map((movie) => (
               <VideoCard key={movie.id} {...movie} />
             ))}
@@ -193,7 +193,7 @@ const VideoGrid = () => {
             Limpar filtros
           </Button>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mx-auto max-w-6xl">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mx-auto max-w-6xl justify-items-center">
           {paginatedMovies.map((movie) => (
             <VideoCard key={movie.id} {...movie} />
           ))}

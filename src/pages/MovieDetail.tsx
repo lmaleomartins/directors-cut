@@ -420,7 +420,7 @@ const MovieDetail = () => {
                           <DialogDescription className="text-muted-foreground">Atualize os campos abaixo e salve.</DialogDescription>
                         </DialogHeader>
                         <form onSubmit={handleInlineUpdate} className="space-y-4">
-                          <div className="grid grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                               <Label htmlFor="edit-title">Título *</Label>
                               <Input id="edit-title" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} required />
@@ -430,7 +430,7 @@ const MovieDetail = () => {
                               <Input id="edit-director" value={editDirector} onChange={(e) => setEditDirector(e.target.value)} required />
                             </div>
                           </div>
-                          <div className="grid grid-cols-3 gap-4">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="space-y-2">
                               <Label htmlFor="edit-year">Ano *</Label>
                               <Select value={String(editYear)} onValueChange={(v) => setEditYear(parseInt(v))}>

@@ -8,7 +8,7 @@ const HeroSection = () => {
   };
 
   return (
-    <section className="relative h-[70vh] flex items-center justify-center overflow-hidden">{/* Removido bg-gradient-hero */}
+    <section className="relative h-[60vh] md:h-[70vh] flex items-center justify-center overflow-hidden">{/* Removido bg-gradient-hero */}
       {/* Minimalist geometric background */}
       <div className="absolute inset-0">
         <div className="absolute top-20 left-20 w-32 h-32 bg-primary/10 rounded-full blur-3xl"></div>
