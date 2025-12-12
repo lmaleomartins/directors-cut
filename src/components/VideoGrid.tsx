@@ -115,6 +115,22 @@ const VideoGrid = () => {
   const paginatedMovies = filteredMovies.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const totalPages = Math.ceil(filteredMovies.length / PAGE_SIZE);
 
+  // When the current page changes, scroll the main catalog section into view
+  useEffect(() => {
+    try {
+      const el = document.getElementById('catalog-main');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        const container = document.getElementById('catalog');
+        if (container) container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        else window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    } catch {
+      // ignore failures (e.g., during SSR or tests)
+    }
+  }, [page]);
+
   const fetchMovies = useCallback(async () => {
     try {
       const { data, error } = await supabase
@@ -209,7 +225,7 @@ const VideoGrid = () => {
       )}
 
       {/* Catálogo Principal */}
-      <section>
+      <section id="catalog-main">
         <h2 className="text-3xl font-bold mb-8 text-center text-foreground">Catálogo</h2>
         <div className="flex flex-wrap gap-4 justify-center mb-8 items-center">
           <div className="relative">
