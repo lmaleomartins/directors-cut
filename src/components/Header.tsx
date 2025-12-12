@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
-import { Film, User, LogOut, Menu, Settings } from "lucide-react";
+import { Film, User, LogOut, Menu, Settings, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 /* dropdown removed: using explicit header buttons instead */
@@ -16,6 +16,7 @@ import {
 
 const Header = () => {
   const { user, signOut } = useAuth();
+  const { canManageAllMovies } = useUserRole();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -49,6 +50,13 @@ const Header = () => {
                 <Settings className="mr-2 h-4 w-4" />
                 Painel Admin
               </Button>
+
+              {canManageAllMovies() && (
+                <Button variant="ghost" className="hidden sm:inline-flex" onClick={() => navigate('/admin?openAdd=true')}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Adicionar Filme
+                </Button>
+              )}
 
               <ThemeToggle />
 
@@ -89,6 +97,17 @@ const Header = () => {
                   <h3 className="text-sm font-medium text-muted-foreground mb-3">Conta</h3>
                   {user ? (
                     <>
+                      {canManageAllMovies() && (
+                        <Button
+                          variant="ghost"
+                          onClick={() => navigate('/admin?openAdd=true')}
+                          className="w-full justify-start px-3 py-2 h-auto text-foreground hover:text-primary hover:bg-accent"
+                        >
+                          <Plus className="mr-2 h-4 w-4" />
+                          Adicionar Filme
+                        </Button>
+                      )}
+
                       <Button
                         variant="ghost"
                         onClick={() => navigate('/profile')}

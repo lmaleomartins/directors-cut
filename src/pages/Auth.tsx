@@ -245,7 +245,7 @@ const Auth = () => {
                         <Input
                           id="signup-firstname"
                           type="text"
-                          placeholder="Leonardo"
+                          placeholder="Nome"
                           value={firstName}
                           onChange={(e) => setFirstName(e.target.value)}
                           className="pl-10 bg-input border-border"
@@ -261,7 +261,7 @@ const Auth = () => {
                         <Input
                           id="signup-lastname"
                           type="text"
-                          placeholder="Martins"
+                          placeholder="Sobrenome"
                           value={lastName}
                           onChange={(e) => setLastName(e.target.value)}
                           className="pl-10 bg-input border-border"
