@@ -1,15 +1,10 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { Film, User, LogOut, Menu } from "lucide-react";
+import { useUserRole } from '@/hooks/useUserRole';
+import { Film, User, LogOut, Menu, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+/* dropdown removed: using explicit header buttons instead */
 import {
   Sheet,
   SheetContent,
@@ -42,50 +37,38 @@ const Header = () => {
         <div className="flex items-center space-x-4">
           {/* Desktop Navigation removed (links not in use) */}
 
-          <ThemeToggle />
-
-          {/* Desktop Auth Menu */}
+          {/* Desktop Auth Buttons (no contours) */}
           {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="border-border hidden md:inline-flex">
-                  <User className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 bg-popover border-border">
-                <DropdownMenuItem 
-                  onClick={() => navigate('/profile')}
-                  className="cursor-pointer hover:bg-accent"
-                >
-                  <User className="mr-2 h-4 w-4" />
-                  Meu Perfil
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => navigate('/admin')}
-                  className="cursor-pointer hover:bg-accent"
-                >
-                  <User className="mr-2 h-4 w-4" />
-                  Painel Admin
-                </DropdownMenuItem>
-                <DropdownMenuSeparator className="bg-border" />
-                <DropdownMenuItem 
-                  onClick={handleSignOut}
-                  className="cursor-pointer hover:bg-accent text-destructive"
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sair
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="hidden md:flex items-center space-x-3">
+              <Button variant="ghost" onClick={() => navigate('/profile')} className="hidden md:inline-flex">
+                <User className="mr-2 h-4 w-4" />
+                Meu Perfil
+              </Button>
+
+              <Button variant="ghost" onClick={() => navigate('/admin')} className="hidden md:inline-flex">
+                <Settings className="mr-2 h-4 w-4" />
+                Painel Admin
+              </Button>
+
+              <ThemeToggle />
+
+              <Button variant="ghost" onClick={handleSignOut} className="hidden md:inline-flex">
+                <LogOut className="mr-2 h-4 w-4" />
+                Sair
+              </Button>
+            </div>
           ) : (
-            <Button 
-              variant="outline" 
-              onClick={() => navigate('/auth')}
-              className="border-border hidden md:inline-flex"
-            >
-              <User className="mr-2 h-4 w-4" />
-              Entrar
-            </Button>
+            <div className="hidden md:flex items-center space-x-2">
+              <ThemeToggle />
+              <Button 
+                variant="ghost" 
+                onClick={() => navigate('/auth')}
+                className="border-border hidden md:inline-flex"
+              >
+                <User className="mr-2 h-4 w-4" />
+                Entrar
+              </Button>
+            </div>
           )}
 
           {/* Mobile Menu */}
@@ -119,7 +102,7 @@ const Header = () => {
                         onClick={() => navigate('/admin')}
                         className="w-full justify-start px-3 py-2 h-auto text-foreground hover:text-primary hover:bg-accent"
                       >
-                        <User className="mr-2 h-4 w-4" />
+                        <Settings className="mr-2 h-4 w-4" />
                         Painel Admin
                       </Button>
                       <Button
