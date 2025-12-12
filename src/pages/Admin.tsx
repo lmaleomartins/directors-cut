@@ -269,6 +269,25 @@ const Admin = () => {
     }
   }, [user, roleLoading, fetchMovies, fetchGenres, navigate]);
 
+  // Abrir o diálogo de adicionar filme quando a query string conter `openAdd=true`
+  useEffect(() => {
+    if (!user) return;
+    if (roleLoading) return;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('openAdd') === 'true') {
+        resetForm();
+        setDialogOpen(true);
+        params.delete('openAdd');
+        const newSearch = params.toString();
+        const newPath = window.location.pathname + (newSearch ? `?${newSearch}` : '');
+        window.history.replaceState({}, '', newPath);
+      }
+    } catch (err) {
+      // silence parsing errors
+    }
+  }, [user, roleLoading]);
+
   const resetForm = () => {
     setTitle('');
     setDirector('');

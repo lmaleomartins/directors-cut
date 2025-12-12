@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Play, Calendar, Clock, Eye, Film, Maximize, Minimize } from 'lucide-react';
+import { ArrowLeft, Play, Calendar, Clock, Eye, Film, Maximize, Minimize, Trash2, Edit } from 'lucide-react';
 import { toast } from 'sonner';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -317,6 +317,23 @@ const MovieDetail = () => {
     return canManageAllMovies() || (user && movie.created_by === user.id);
   };
 
+  const handleDelete = async () => {
+    if (!movie) return;
+    if (!canEditHere()) return;
+    if (!confirm('Tem certeza que deseja excluir este filme? Esta ação não pode ser desfeita.')) return;
+    try {
+      const { error } = await supabase
+        .from('movies')
+        .delete()
+        .eq('id', movie.id);
+      if (error) throw error;
+      toast.success('Filme excluído com sucesso!');
+      navigate('/');
+    } catch (err: unknown) {
+      toast.error('Erro ao excluir filme');
+    }
+  };
+
   const handleInlineUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!movie) return;
@@ -531,9 +548,12 @@ const MovieDetail = () => {
                     </Badge>
                   )}
                   {canEditHere() && (
+                    <div className="flex items-center">
                     <Dialog open={editOpen} onOpenChange={setEditOpen}>
                       <DialogTrigger asChild>
-                        <Button variant="outline" className="ml-4 border-border">Editar</Button>
+                        <Button variant="outline" size="sm" className="ml-4 border-border" aria-label="Editar">
+                          <Edit className="w-4 h-4" />
+                        </Button>
                       </DialogTrigger>
                       <DialogContent className="max-w-2xl bg-card">
                         <DialogHeader>
@@ -670,6 +690,16 @@ const MovieDetail = () => {
                         </form>
                       </DialogContent>
                     </Dialog>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDelete}
+                      className="ml-3 border-border text-destructive hover:text-destructive"
+                      aria-label="Excluir"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                    </div>
                   )}
                 </div>
 
